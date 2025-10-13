@@ -4,42 +4,38 @@
   "title": "WFDD One-Minute Crossword",
   "size": 5,
   "grid": [
-    "A",
-    "C",
-    "E",
-    "#",
-    "#",
-    "N",
-    "#",
-    ".",
     "#",
     "#",
     "D",
     "#",
-    "D",
+    "#",
+    "#",
+    "#",
     "E",
+    "#",
+    "#",
+    "F",
+    "L",
     "A",
-    null,
+    "O",
+    "D",
+    "#",
+    "#",
+    "T",
     "#",
     "#",
     "#",
-    ".",
-    null,
-    "C",
-    "E",
-    null,
-    null
+    "#",
+    "H",
+    "#",
+    "#"
   ],
   "clues": {
     "across": {
-      "1": "Local radio station's excellence in reporting recognized",
-      "7": "Federal agency involved in local drug investigations",
-      "12": "Local radio station's call letters in Winston-Salem"
+      "3": "WFDD's report on Forsyth County's new funding initiative"
     },
     "down": {
-      "1": "WFDD's latest feature on community events in Winston-Salem",
-      "3": "Forsyth County's new initiative for education and health",
-      "9": "WFDD's coverage of local events in this NC city"
+      "1": "Investigation into a recent death in Forsyth County"
     }
   },
   "meta": {
