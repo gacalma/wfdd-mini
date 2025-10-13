@@ -6,49 +6,49 @@
   "grid": [
     "A",
     "S",
+    "G",
+    "#",
+    "#",
+    "T",
+    "V",
+    "O",
+    "T",
     "C",
+    "V",
+    ".",
+    "P",
+    ".",
+    "E",
+    null,
+    "M",
+    "I",
+    "D",
+    "O",
     "#",
     "#",
     "T",
     "H",
-    "E",
-    "L",
-    "I",
-    "V",
-    ".",
-    "O",
-    ".",
-    "C",
-    null,
-    "O",
-    "O",
-    "K",
-    "E",
-    "#",
-    "#",
-    "B",
-    "E",
     null
   ],
   "clues": {
     "across": {
       "1": "Public hearing on Cook's closure set for October 28",
-      "4": "Public hearing on Cook's fate by WS/FCS next Tuesday",
-      "8": "Public hearing on closure of a literacy model school",
-      "13": "Public hearing on closure of Cook Literacy Model School"
+      "4": "GOP's new map aims for an 11th seat in this state",
+      "8": "GOP plans to vote on new House map in this NC city",
+      "13": "GOP's plan to redraw this state's House map in Raleigh"
     },
     "down": {
-      "1": "LendingTree founder who died in weekend accident",
-      "3": "LendingTree's founder died in an ATV accident near Charlotte",
-      "7": "Pastor David Black's lawsuit involves this federal agency"
+      "1": "LendingTree CEO Doug Lebda's tragic weekend accident",
+      "3": "NC Republicans plan to redraw this for 2026 elections",
+      "7": "LendingTree's founder died in an ATV accident near Charlotte"
     }
   },
   "meta": {
     "source_urls": [
+      "https://www.wfdd.org/politics-government/2025-10-13/north-carolina-gop-announce-plans-to-vote-on-new-house-map-amid-nationwide-redistricting-battle",
       "https://www.wfdd.org/education/2025-10-13/ws-fcs-to-hold-public-hearing-on-closing-cook-elementary-school",
       "https://www.wfdd.org/2025-10-13/lendingtree-ceo-doug-lebda-died-over-the-weekend-in-atv-accident-company-says",
       "https://www.wfdd.org/education/2025-10-13/carolina-curious-what-is-the-status-of-leandro-could-it-help-ws-fcs-amid-budget-crisis",
-      "https://www.wfdd.org/weather/2025-10-11/noreaster-without-a-name-to-bring-ocean-flooding-and-high-winds-to-us-east-coast",
       "https://www.wfdd.org/national/2025-10-13/tackles-projectiles-and-gunfire-many-fear-ice-tactics-are-growing-more-violent"
     ]
   }
