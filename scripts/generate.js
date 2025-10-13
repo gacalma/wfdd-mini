@@ -2,7 +2,7 @@ import Parser from 'rss-parser';
 import { readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { generateClueLLM } from './llmClues.js';
+import { generateClueLLM, selectCrosswordWordsLLM } from './llmClues.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = dirname(__dirname);
@@ -10,14 +10,92 @@ const projectRoot = dirname(__dirname);
 const WFDD_LOCAL = "https://www.wfdd.org/local.rss";
 const NPR_TOP = "https://www.wfdd.org/tags/npr-top-stories.rss";
 
-// Fixed 5x5 pattern for consistent 10-word puzzles
-const GRID_PATTERN = [
-  '.', '.', '.', '.', '.',
-  '.', '#', '.', '.', '.',
-  '.', '.', '.', '.', '.',
-  '.', '.', '.', '#', '.',
-  '.', '.', '.', '.', '.'
-];
+// Multiple 5x5 crossword patterns for variety
+const GRID_TEMPLATES = {
+  // Template 1: Standard cross (1x4-letter, 2x5-letter)
+  cross: {
+    pattern: [
+      '.', '.', '.', '.', '.',
+      '#', '#', '.', '#', '#',
+      '.', '.', '.', '.', '.',
+      '#', '#', '.', '#', '#',
+      '.', '.', '.', '.', '.'
+    ],
+    words: [
+      { type: 'across', row: 0, col: 0, length: 4, number: 1 },
+      { type: 'across', row: 2, col: 0, length: 5, number: 6 },
+      { type: 'down', row: 0, col: 2, length: 5, number: 3 }
+    ]
+  },
+
+  // Template 2: L-shape (3x3-letter, 1x5-letter)
+  lshape: {
+    pattern: [
+      '.', '.', '.', '#', '#',
+      '.', '#', '.', '#', '#',
+      '.', '#', '.', '.', '.',
+      '.', '#', '#', '#', '.',
+      '.', '.', '.', '.', '.'
+    ],
+    words: [
+      { type: 'across', row: 0, col: 0, length: 3, number: 1 },
+      { type: 'across', row: 2, col: 2, length: 3, number: 5 },
+      { type: 'across', row: 4, col: 0, length: 5, number: 8 },
+      { type: 'down', row: 0, col: 0, length: 5, number: 1 }
+    ]
+  },
+
+  // Template 3: Plus sign (5x3-letter words)
+  plus: {
+    pattern: [
+      '#', '#', '.', '#', '#',
+      '#', '#', '.', '#', '#',
+      '.', '.', '.', '.', '.',
+      '#', '#', '.', '#', '#',
+      '#', '#', '.', '#', '#'
+    ],
+    words: [
+      { type: 'across', row: 2, col: 0, length: 5, number: 3 },
+      { type: 'down', row: 0, col: 2, length: 5, number: 1 }
+    ]
+  },
+
+  // Template 4: Diagonal (2x3-letter, 2x4-letter) 
+  diagonal: {
+    pattern: [
+      '.', '.', '.', '#', '#',
+      '.', '#', '.', '.', '#',
+      '.', '#', '#', '.', '.',
+      '#', '.', '.', '.', '.',
+      '#', '#', '.', '.', '.'
+    ],
+    words: [
+      { type: 'across', row: 0, col: 0, length: 3, number: 1 },
+      { type: 'across', row: 1, col: 2, length: 3, number: 4 },
+      { type: 'across', row: 3, col: 1, length: 4, number: 7 },
+      { type: 'down', row: 0, col: 0, length: 3, number: 1 },
+      { type: 'down', row: 1, col: 3, length: 4, number: 6 }
+    ]
+  },
+
+  // Template 5: Mini themeless (1x3, 2x4, 1x5)
+  themeless: {
+    pattern: [
+      '.', '.', '.', '.', '#',
+      '#', '.', '#', '.', '.',
+      '#', '.', '#', '.', '#',
+      '.', '.', '.', '.', '.',
+      '#', '.', '#', '#', '#'
+    ],
+    words: [
+      { type: 'across', row: 0, col: 0, length: 4, number: 1 },
+      { type: 'across', row: 1, col: 3, length: 2, number: 5 }, // Very short
+      { type: 'across', row: 3, col: 0, length: 5, number: 7 },
+      { type: 'down', row: 0, col: 1, length: 3, number: 2 },
+      { type: 'down', row: 1, col: 3, length: 3, number: 5 }
+    ]
+  }
+};
 
 // Fallback words if RSS fails or no good candidates
 const FALLBACK_WORDS = {
@@ -249,139 +327,84 @@ function extractCandidateWords(stories, stopwords) {
   return { words: uniqueByOrder(sorted), wordSources };
 }
 
-function buildCrosswordGrid(candidates, wordSources = {}) {
-  const size = 5;
-  const grid = [...GRID_PATTERN];
-  const { starts } = computeNumbering(grid, size);
+function buildCrosswordGrid(llmWords, candidates, wordSources = {}, preselectedTemplate = null) {
+  // Use preselected template or randomly select one
+  const templateName = preselectedTemplate || Object.keys(GRID_TEMPLATES)[Math.floor(Math.random() * Object.keys(GRID_TEMPLATES).length)];
+  const template = GRID_TEMPLATES[templateName];
   
-  // Group candidates by length
-  const byLength = {};
-  candidates.forEach(word => {
-    if (!byLength[word.length]) byLength[word.length] = [];
-    byLength[word.length].push(word);
-  });
-
-  // Get slot requirements
-  const acrossSlots = Object.values(starts.across);
-  const downSlots = Object.values(starts.down);
+  console.log(`Selected template: ${templateName} with ${template.words.length} words`);
   
-  const solution = new Array(25).fill('');
-  const usedWords = new Set();
-  const usedWordSources = {}; // track sources of actually used words
-
-  // Helper to check if word fits in slot
-  function canPlace(word, slot) {
-    if (usedWords.has(word)) return false;
-    if (word.length !== slot.length) return false;
+  let selectedWords = llmWords;
+  const requiredLengths = template.words.map(w => w.length).sort((a,b) => b-a);
+  
+  // Fallback to heuristic selection if LLM fails
+  if (!selectedWords || selectedWords.length !== template.words.length) {
+    console.log('LLM word selection failed, using heuristic fallback');
     
-    for (let i = 0; i < slot.length; i++) {
-      const pos = slot[i];
-      if (solution[pos] && solution[pos] !== word[i]) {
-        return false;
+    // Group candidates by length
+    const byLength = {};
+    candidates.forEach(word => {
+      if (!byLength[word.length]) byLength[word.length] = [];
+      byLength[word.length].push(word);
+    });
+    
+    // Fallback words by length
+    const fallbackWords = {
+      2: ['NO', 'GO', 'UP'],
+      3: ['THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'HAD', 'DAY', 'GET', 'USE', 'MAN', 'NEW', 'NOW', 'WAY', 'MAY', 'SAY'],
+      4: ['NEWS', 'CITY', 'TIME', 'WORK', 'YEAR', 'AREA', 'PLAN', 'TEAM'],
+      5: ['RADIO', 'STATE', 'COURT', 'MONEY', 'HOUSE', 'WATER', 'BOARD']
+    };
+    
+    selectedWords = [];
+    for (const length of requiredLengths) {
+      const available = byLength[length] || fallbackWords[length] || [];
+      const word = available.find(w => !selectedWords.includes(w)) || 
+                   fallbackWords[length]?.[0] || 'A'.repeat(length);
+      selectedWords.push(word);
+    }
+  }
+  
+  console.log('Using crossword words:', selectedWords);
+  
+  // Build grid using template
+  const grid = [...template.pattern];
+  const usedWords = [];
+  
+  // Place words according to template
+  template.words.forEach((wordSpec, index) => {
+    const word = selectedWords[index] || 'A'.repeat(wordSpec.length);
+    usedWords.push(word);
+    
+    if (wordSpec.type === 'across') {
+      for (let i = 0; i < wordSpec.length; i++) {
+        const pos = wordSpec.row * 5 + wordSpec.col + i;
+        grid[pos] = word[i];
+      }
+    } else if (wordSpec.type === 'down') {
+      for (let i = 0; i < wordSpec.length; i++) {
+        const pos = (wordSpec.row + i) * 5 + wordSpec.col;
+        grid[pos] = word[i];
       }
     }
-    return true;
-  }
-
-  // Helper to place word in slot
-  function placeWord(word, slot) {
-    for (let i = 0; i < slot.length; i++) {
-      solution[slot[i]] = word[i];
-    }
-    usedWords.add(word);
+  });
+  
+  const usedWordSources = {};
+  
+  // Map sources for used words
+  for (const word of usedWords) {
     if (wordSources[word]) {
       usedWordSources[word] = wordSources[word];
     }
   }
-
-  // Helper to remove word from slot
-  function removeWord(word, slot) {
-    for (let i = 0; i < slot.length; i++) {
-      solution[slot[i]] = '';
-    }
-    usedWords.delete(word);
-    delete usedWordSources[word];
-  }
-
-  // Try to fill slots with backtracking
-  function fillSlots(slots, isAcross, depth = 0) {
-    if (depth >= slots.length) return true;
-    if (depth > 10) return false; // prevent infinite recursion
-    
-    const slot = slots[depth];
-    const candidates = byLength[slot.length] || [];
-    
-    for (const word of candidates) {
-      if (canPlace(word, slot)) {
-        placeWord(word, slot);
-        if (fillSlots(slots, isAcross, depth + 1)) {
-          return true;
-        }
-        removeWord(word, slot);
-      }
-    }
-    return false;
-  }
-
-  // Try to fill with candidates first
-  let success = fillSlots(acrossSlots, true) && fillSlots(downSlots, false);
-
-  // If failed, use fallback words
-  if (!success) {
-    console.log('Falling back to built-in words');
-    solution.fill('');
-    usedWords.clear();
-    
-    const allSlots = [...acrossSlots, ...downSlots];
-    const fallbackCandidates = [];
-    
-    // Build fallback list
-    Object.entries(FALLBACK_WORDS).forEach(([len, words]) => {
-      words.forEach(word => {
-        if (!fallbackCandidates.includes(word)) {
-          fallbackCandidates.push(word);
-        }
-      });
-    });
-
-    // Simple greedy fill with fallbacks
-    for (const slot of allSlots) {
-      const len = slot.length;
-      const available = fallbackCandidates.filter(w => 
-        w.length === len && !usedWords.has(w)
-      );
-      
-      if (available.length > 0) {
-        const word = available[0];
-        let canFit = true;
-        
-        // Check conflicts
-        for (let i = 0; i < slot.length; i++) {
-          const pos = slot[i];
-          if (solution[pos] && solution[pos] !== word[i]) {
-            canFit = false;
-            break;
-          }
-        }
-        
-        if (canFit) {
-          placeWord(word, slot);
-        }
-      }
-    }
-  }
-
-  // Build final grid
-  const finalGrid = new Array(25);
-  for (let i = 0; i < 25; i++) {
-    if (grid[i] === '#') {
-      finalGrid[i] = '#';
-    } else {
-      finalGrid[i] = solution[i] || 'A'; // fallback letter
-    }
-  }
-
-  return { grid: finalGrid, usedWords: Array.from(usedWords), usedWordSources };
+  
+  return { 
+    grid, 
+    usedWords, 
+    usedWordSources, 
+    template: templateName,
+    wordSpecs: template.words
+  };
 }
 
 async function generateClues(grid, stories, usedWords, usedWordSources) {
@@ -508,10 +531,22 @@ async function generatePuzzle() {
     const { selected: stories, sourceUrls } = pickStories(feeds);
     console.log(`Selected ${stories.length} stories`);
     
+    // First, randomly select a template to determine word requirements
+    const templateNames = Object.keys(GRID_TEMPLATES);
+    const randomTemplate = templateNames[Math.floor(Math.random() * templateNames.length)];
+    const template = GRID_TEMPLATES[randomTemplate];
+    
+    // Use LLM to intelligently select crossword words based on template
+    console.log('Using LLM to select crossword words from stories...');
+    const llmWords = await selectCrosswordWordsLLM(stories, template);
+    if (llmWords) {
+      console.log('LLM selected words:', llmWords);
+    }
+    
     const { words: candidates, wordSources } = extractCandidateWords(stories, stopwords);
     console.log(`Extracted ${candidates.length} candidate words:`, candidates.slice(0, 10));
     
-    const { grid, usedWords, usedWordSources } = buildCrosswordGrid(candidates, wordSources);
+    const { grid, usedWords, usedWordSources, template: selectedTemplate } = buildCrosswordGrid(llmWords, candidates, wordSources, randomTemplate);
     console.log(`Built grid with words:`, usedWords);
     
     const clues = await generateClues(grid, stories, usedWords, usedWordSources);
