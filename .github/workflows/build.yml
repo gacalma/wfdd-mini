@@ -146,6 +146,18 @@ jobs:
             echo "✅ Changes committed and pushed"
           fi
 
+      - name: Prepare for Pages deployment
+        run: |
+          echo "📁 Preparing GitHub Pages deployment..."
+          echo "Root directory contents:"
+          ls -la
+          echo "📄 Checking for index.html:"
+          ls -la index.html || echo "❌ index.html not found"
+          echo "📁 Public directory contents:"
+          ls -la public/ || echo "❌ public directory not found"
+          echo "🧩 Checking for puzzle files:"
+          ls -la public/puzzles/ || echo "❌ puzzles directory not found"
+
       - name: Upload artifact for Pages
         uses: actions/upload-pages-artifact@v3
         with:
