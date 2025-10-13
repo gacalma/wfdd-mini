@@ -4,38 +4,39 @@
   "title": "WFDD One-Minute Crossword",
   "size": 5,
   "grid": [
-    "#",
-    "#",
-    "D",
-    "#",
-    "#",
+    "W",
+    "S",
+    "N",
+    "C",
+    ".",
     "#",
     "#",
     "E",
     "#",
     "#",
-    "F",
-    "L",
+    "R",
     "A",
+    "W",
+    "I",
     "O",
-    "D",
     "#",
     "#",
-    "T",
+    "S",
     "#",
     "#",
-    "#",
-    "#",
-    "H",
-    "#",
-    "#"
+    ".",
+    ".",
+    null,
+    ".",
+    "."
   ],
   "clues": {
     "across": {
-      "3": "WFDD's report on Forsyth County's new funding initiative"
+      "1": "Public hearing on closing this Forsyth County school",
+      "6": "WFDD's medium for sharing local stories and music"
     },
     "down": {
-      "1": "Investigation into a recent death in Forsyth County"
+      "3": "WFDD's coverage of local events in the Triad area"
     }
   },
   "meta": {

@@ -407,9 +407,7 @@ function buildCrosswordGrid(llmWords, candidates, wordSources = {}, preselectedT
   };
 }
 
-async function generateClues(grid, stories, usedWords, usedWordSources) {
-  const size = 5;
-  const { starts, numMap } = computeNumbering(grid, size);
+async function generateClues(grid, stories, usedWords, usedWordSources, wordSpecs) {
   const clues = { across: {}, down: {} };
 
   // Helper to create heuristic clue text (fallback)
@@ -441,27 +439,27 @@ async function generateClues(grid, stories, usedWords, usedWordSources) {
     return fallbackClues[word] || 'In today\'s coverage';
   }
 
-  // Collect all clue entries
-  const acrossEntries = Object.entries(starts.across).map(([num, cells]) => {
-    const answer = cells.map(i => grid[i]).join('');
-    const source = usedWordSources[answer];
-    return {
-      number: num,
-      answer,
-      sourceTitle: source?.title || '',
-      sourceUrl: source?.link || ''
-    };
-  });
+  // Collect clue entries based on template word specifications
+  const acrossEntries = [];
+  const downEntries = [];
 
-  const downEntries = Object.entries(starts.down).map(([num, cells]) => {
-    const answer = cells.map(i => grid[i]).join('');
-    const source = usedWordSources[answer];
-    return {
-      number: num,
-      answer,
+  wordSpecs.forEach((wordSpec, index) => {
+    const word = usedWords[index];
+    if (!word) return;
+
+    const source = usedWordSources[word];
+    const entry = {
+      number: wordSpec.number,
+      answer: word,
       sourceTitle: source?.title || '',
       sourceUrl: source?.link || ''
     };
+
+    if (wordSpec.type === 'across') {
+      acrossEntries.push(entry);
+    } else if (wordSpec.type === 'down') {
+      downEntries.push(entry);
+    }
   });
 
   // Helper for concurrent LLM calls with limits
@@ -546,10 +544,10 @@ async function generatePuzzle() {
     const { words: candidates, wordSources } = extractCandidateWords(stories, stopwords);
     console.log(`Extracted ${candidates.length} candidate words:`, candidates.slice(0, 10));
     
-    const { grid, usedWords, usedWordSources, template: selectedTemplate } = buildCrosswordGrid(llmWords, candidates, wordSources, randomTemplate);
+    const { grid, usedWords, usedWordSources, template: selectedTemplate, wordSpecs } = buildCrosswordGrid(llmWords, candidates, wordSources, randomTemplate);
     console.log(`Built grid with words:`, usedWords);
     
-    const clues = await generateClues(grid, stories, usedWords, usedWordSources);
+    const clues = await generateClues(grid, stories, usedWords, usedWordSources, wordSpecs);
     
     // Create puzzle object
     const today = new Date();
