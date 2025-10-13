@@ -12,8 +12,24 @@ const NPR_TOP = "https://feeds.npr.org/1001/rss.xml";
 
 // Multiple 5x5 crossword patterns for variety (substantial puzzles only)
 const GRID_TEMPLATES = {
+  // Template 0: Simple separate words (no intersections for debugging)
+  simple: {
+    pattern: [
+      '.', '.', '.', '.', '.',
+      '#', '#', '#', '#', '#',
+      '.', '.', '.', '.', '.',
+      '#', '#', '#', '#', '#',
+      '.', '.', '.', '.', '.'
+    ],
+    words: [
+      { type: 'across', row: 0, col: 0, length: 5, number: 1 },
+      { type: 'across', row: 2, col: 0, length: 5, number: 6 },
+      { type: 'across', row: 4, col: 0, length: 5, number: 11 }
+    ]
+  }
+
   // Template 1: Dense mini (6 words: mix of 3,4,5 letters)
-  dense: {
+  /*dense: {
     pattern: [
       '.', '.', '.', '.', '.',
       '.', '#', '.', '#', '.',
@@ -72,22 +88,20 @@ const GRID_TEMPLATES = {
     ]
   },
 
-  // Template 4: Mini themeless (6 words: realistic mini crossword)
+  // Template 4: Simple grid (4 words: minimal crossings)  
   mini: {
     pattern: [
-      '.', '.', '.', '.', '#',
-      '.', '#', '.', '#', '.',
-      '.', '#', '.', '.', '.',
-      '.', '.', '.', '#', '.',
-      '#', '.', '#', '#', '#'
+      '.', '.', '.', '.', '.',
+      '#', '#', '#', '#', '#',
+      '.', '.', '.', '.', '.',
+      '#', '#', '#', '#', '#',
+      '.', '.', '.', '.', '.'
     ],
     words: [
-      { type: 'across', row: 0, col: 0, length: 4, number: 1 },
-      { type: 'across', row: 1, col: 3, length: 2, number: 5 },
-      { type: 'across', row: 2, col: 2, length: 3, number: 7 },
-      { type: 'across', row: 3, col: 0, length: 3, number: 10 },
-      { type: 'down', row: 0, col: 0, length: 4, number: 1 },
-      { type: 'down', row: 0, col: 3, length: 4, number: 4 }
+      { type: 'across', row: 0, col: 0, length: 5, number: 1 },
+      { type: 'across', row: 2, col: 0, length: 5, number: 6 },
+      { type: 'across', row: 4, col: 0, length: 5, number: 11 },
+      { type: 'down', row: 0, col: 2, length: 5, number: 3 }
     ]
   },
 
@@ -110,7 +124,7 @@ const GRID_TEMPLATES = {
       { type: 'down', row: 0, col: 2, length: 5, number: 3 },
       { type: 'down', row: 0, col: 3, length: 5, number: 4 }
     ]
-  }
+  }*/
 };
 
 // Fallback words if RSS fails or no good candidates

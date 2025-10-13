@@ -4,43 +4,39 @@
   "title": "WFDD One-Minute Crossword",
   "size": 5,
   "grid": [
-    "A",
+    "W",
+    "S",
+    "F",
+    "C",
+    "S",
+    "#",
+    "#",
+    "#",
+    "#",
+    "#",
+    "N",
     "O",
+    "R",
     "T",
-    "T",
-    "#",
-    "M",
-    "#",
-    ".",
     "H",
-    "O",
-    "I",
     "#",
-    "A",
-    "E",
-    "V",
-    "D",
-    "O",
+    "#",
+    "#",
+    "#",
+    "#",
     "P",
-    "Y",
-    ".",
-    "#",
-    ".",
-    "#",
-    "#",
-    "#"
+    "L",
+    "A",
+    "N",
+    "S"
   ],
   "clues": {
     "across": {
-      "1": "GOP's new map aims for an 11th seat in this state",
-      "5": "WFDD's coverage of local events in Forsyth County",
-      "7": "LendingTree CEO Doug Lebda's tragic weekend accident",
-      "10": "Raleigh's GOP plans to vote on House district changes"
+      "1": "Public hearing on Cook's closure set for October 28",
+      "6": "GOP's new U.S. House map vote planned in this city",
+      "11": "GOP's upcoming vote on House map in this state capital"
     },
-    "down": {
-      "1": "GOP's plan to redraw U.S. House map in this state",
-      "4": "GOP's plan to redraw this state's House map in Raleigh"
-    }
+    "down": {}
   },
   "meta": {
     "source_urls": [
