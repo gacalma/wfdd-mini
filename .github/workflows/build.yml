@@ -23,6 +23,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -172,4 +175,11 @@ jobs:
           path: '.'
           
       - name: Deploy to Pages
+        id: deployment
         uses: actions/deploy-pages@v4
+        
+      - name: Output deployment URL
+        run: |
+          echo "🚀 Site deployed to: ${{ steps.deployment.outputs.page_url }}"
+          echo "📅 Puzzle date: $(date +'%Y-%m-%d')"
+          echo "✅ GitHub Pages deployment complete!"
