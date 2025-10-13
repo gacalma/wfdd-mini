@@ -103,14 +103,34 @@ jobs:
 
       - name: Prune old puzzles (>120 days)
         run: |
-          find public/puzzles -type f -name '*.json' | while read f; do
-            base=$(basename "$f" .json)
-            if date -d "$base" >/dev/null 2>&1; then
-              cutoff=$(date -d "120 days ago" +%s)
-              stamp=$(date -d "$base" +%s)
-              [ "$stamp" -lt "$cutoff" ] && rm -f "$f"
+          echo "🗑️ Pruning old puzzles (>120 days)..."
+          if [ -d "public/puzzles" ]; then
+            # Count existing puzzles
+            puzzle_count=$(find public/puzzles -type f -name '*.json' 2>/dev/null | wc -l)
+            echo "Found $puzzle_count existing puzzles"
+            
+            if [ "$puzzle_count" -gt 0 ]; then
+              # Find and remove old puzzles
+              find public/puzzles -type f -name '*.json' 2>/dev/null | while read f; do
+                if [ -n "$f" ]; then
+                  base=$(basename "$f" .json)
+                  if date -d "$base" >/dev/null 2>&1; then
+                    cutoff=$(date -d "120 days ago" +%s)
+                    stamp=$(date -d "$base" +%s)
+                    if [ "$stamp" -lt "$cutoff" ]; then
+                      echo "Removing old puzzle: $f"
+                      rm -f "$f"
+                    fi
+                  fi
+                fi
+              done || echo "No old puzzles to remove"
+            else
+              echo "No puzzles found to prune"
             fi
-          done
+          else
+            echo "public/puzzles directory does not exist"
+          fi
+          echo "✅ Pruning completed"
 
       - name: Commit changes
         if: steps.gen.outputs.already == 'false'
