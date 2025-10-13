@@ -21,9 +21,9 @@ const GRID_PATTERN = [
 
 // Fallback words if RSS fails or no good candidates
 const FALLBACK_WORDS = {
-  5: ['RIVER', 'RADIO', 'WFDD'],
-  4: ['CITY', 'NEWS', 'PARK'],
-  3: ['AIR', 'NPR', 'WIN']
+  5: ['RADIO', 'WFDD', 'GRANT', 'STATE', 'LOCAL'],
+  4: ['NEWS', 'CITY', 'VOTE', 'BILL', 'FUND'],
+  3: ['NPR', 'LAW', 'TAX', 'ICE', 'CBD']
 };
 
 function normalizeWord(w) {
@@ -155,6 +155,15 @@ function extractCandidateWords(stories, stopwords) {
   const wordSources = {}; // track which story each word came from
   const allWords = [];
   
+  // Common crossword-friendly news words to look for
+  const newsKeywords = new Set([
+    'GRANT', 'CITY', 'STATE', 'COUNTY', 'LOCAL', 'BILL', 'LAW', 'VOTE', 
+    'FUND', 'MONEY', 'COURT', 'JUDGE', 'MAYOR', 'BOARD', 'HOUSE', 'SENATE',
+    'SCHOOL', 'CHILD', 'FAMILY', 'WORK', 'JOB', 'PLAN', 'ROAD', 'PARK',
+    'WATER', 'FIRE', 'POLICE', 'HEALTH', 'CARE', 'HELP', 'NEED', 'YEAR',
+    'TIME', 'AREA', 'GROUP', 'TEAM', 'GAME', 'PLAY', 'WIN', 'LOSS'
+  ]);
+  
   // Enhanced word extraction with smarter filtering for LLM usage
   stories.forEach((story, storyIndex) => {
     const titleText = story.title || '';
@@ -213,15 +222,20 @@ function extractCandidateWords(stories, stopwords) {
 
   // Smart sorting for better crossword words
   const sorted = Object.keys(counts).sort((a, b) => {
-    // First priority: words from titles
+    // First priority: crossword-friendly news words
+    const aIsFriendly = newsKeywords.has(a);
+    const bIsFriendly = newsKeywords.has(b);
+    if (aIsFriendly !== bIsFriendly) return bIsFriendly - aIsFriendly;
+    
+    // Second priority: words from titles
     const aPriority = wordSources[a]?.priority || 3;
     const bPriority = wordSources[b]?.priority || 3;
     if (aPriority !== bPriority) return aPriority - bPriority;
     
-    // Second priority: uniqueness (prefer words appearing once)
+    // Third priority: uniqueness (prefer words appearing once)
     if (counts[a] !== counts[b]) return counts[a] - counts[b];
     
-    // Third priority: alphabetical
+    // Fourth priority: alphabetical
     return a.localeCompare(b);
   });
 
