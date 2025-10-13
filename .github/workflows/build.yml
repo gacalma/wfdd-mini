@@ -1,6 +1,8 @@
 name: Build & Deploy WFDD Mini
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
   schedule:
     # 11:05 UTC = 07:05 America/New_York (standard); adjust as needed
