@@ -61,12 +61,11 @@ jobs:
           PUZ="public/puzzles/${TODAY}.json"
           echo "Today's date: $TODAY"
           echo "Looking for puzzle: $PUZ"
-          if [ -f "$PUZ" ]; then
-            echo "already=true" >> $GITHUB_OUTPUT
-            echo "✅ Puzzle already exists: $PUZ"
-          else
-            echo "already=false" >> $GITHUB_OUTPUT
-            echo "🎲 Generating new puzzle..."
+          # Always regenerate today's puzzle in CI to ensure LLM-generated clues are fresh
+          echo "Forcing regeneration of $PUZ in CI"
+          rm -f "$PUZ" || true
+          echo "already=false" >> $GITHUB_OUTPUT
+          echo "🎲 Generating new puzzle..."
             echo "Environment: LLM_ENABLED=$LLM_ENABLED"
             echo "Working directory: $(pwd)"
             echo "Node version: $(node --version)"
