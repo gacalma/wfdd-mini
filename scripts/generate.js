@@ -10,89 +10,105 @@ const projectRoot = dirname(__dirname);
 const WFDD_LOCAL = "https://www.wfdd.org/local.rss";
 const NPR_TOP = "https://www.wfdd.org/tags/npr-top-stories.rss";
 
-// Multiple 5x5 crossword patterns for variety
+// Multiple 5x5 crossword patterns for variety (substantial puzzles only)
 const GRID_TEMPLATES = {
-  // Template 1: Standard cross (1x4-letter, 2x5-letter)
-  cross: {
+  // Template 1: Dense mini (6 words: mix of 3,4,5 letters)
+  dense: {
     pattern: [
       '.', '.', '.', '.', '.',
-      '#', '#', '.', '#', '#',
+      '.', '#', '.', '#', '.',
       '.', '.', '.', '.', '.',
-      '#', '#', '.', '#', '#',
+      '.', '#', '.', '#', '.',
       '.', '.', '.', '.', '.'
     ],
     words: [
-      { type: 'across', row: 0, col: 0, length: 4, number: 1 },
+      { type: 'across', row: 0, col: 0, length: 5, number: 1 },
       { type: 'across', row: 2, col: 0, length: 5, number: 6 },
-      { type: 'down', row: 0, col: 2, length: 5, number: 3 }
+      { type: 'across', row: 4, col: 0, length: 5, number: 11 },
+      { type: 'down', row: 0, col: 0, length: 5, number: 1 },
+      { type: 'down', row: 0, col: 2, length: 5, number: 3 },
+      { type: 'down', row: 0, col: 4, length: 5, number: 5 }
     ]
   },
 
-  // Template 2: L-shape (3x3-letter, 1x5-letter)
-  lshape: {
+  // Template 2: Staggered (7 words: varied lengths)
+  staggered: {
     pattern: [
       '.', '.', '.', '#', '#',
-      '.', '#', '.', '#', '#',
-      '.', '#', '.', '.', '.',
-      '.', '#', '#', '#', '.',
-      '.', '.', '.', '.', '.'
-    ],
-    words: [
-      { type: 'across', row: 0, col: 0, length: 3, number: 1 },
-      { type: 'across', row: 2, col: 2, length: 3, number: 5 },
-      { type: 'across', row: 4, col: 0, length: 5, number: 8 },
-      { type: 'down', row: 0, col: 0, length: 5, number: 1 }
-    ]
-  },
-
-  // Template 3: Plus sign (5x3-letter words)
-  plus: {
-    pattern: [
-      '#', '#', '.', '#', '#',
-      '#', '#', '.', '#', '#',
-      '.', '.', '.', '.', '.',
-      '#', '#', '.', '#', '#',
-      '#', '#', '.', '#', '#'
-    ],
-    words: [
-      { type: 'across', row: 2, col: 0, length: 5, number: 3 },
-      { type: 'down', row: 0, col: 2, length: 5, number: 1 }
-    ]
-  },
-
-  // Template 4: Diagonal (2x3-letter, 2x4-letter) 
-  diagonal: {
-    pattern: [
-      '.', '.', '.', '#', '#',
-      '.', '#', '.', '.', '#',
-      '.', '#', '#', '.', '.',
       '#', '.', '.', '.', '.',
+      '.', '.', '#', '.', '#',
+      '.', '.', '.', '.', '.',
       '#', '#', '.', '.', '.'
     ],
     words: [
       { type: 'across', row: 0, col: 0, length: 3, number: 1 },
-      { type: 'across', row: 1, col: 2, length: 3, number: 4 },
-      { type: 'across', row: 3, col: 1, length: 4, number: 7 },
-      { type: 'down', row: 0, col: 0, length: 3, number: 1 },
-      { type: 'down', row: 1, col: 3, length: 4, number: 6 }
+      { type: 'across', row: 1, col: 1, length: 4, number: 4 },
+      { type: 'across', row: 3, col: 0, length: 5, number: 8 },
+      { type: 'across', row: 4, col: 2, length: 3, number: 13 },
+      { type: 'down', row: 0, col: 0, length: 4, number: 1 },
+      { type: 'down', row: 0, col: 2, length: 3, number: 3 },
+      { type: 'down', row: 1, col: 4, length: 4, number: 7 }
     ]
   },
 
-  // Template 5: Mini themeless (1x3, 2x4, 1x5)
-  themeless: {
+  // Template 3: Corners (8 words: corner-focused design)
+  corners: {
+    pattern: [
+      '.', '.', '#', '.', '.',
+      '.', '#', '#', '#', '.',
+      '#', '#', '.', '#', '#',
+      '.', '#', '#', '#', '.',
+      '.', '.', '#', '.', '.'
+    ],
+    words: [
+      { type: 'across', row: 0, col: 0, length: 2, number: 1 },
+      { type: 'across', row: 0, col: 3, length: 2, number: 3 },
+      { type: 'across', row: 2, col: 2, length: 1, number: 5 }, // Single letter intersection
+      { type: 'across', row: 4, col: 0, length: 2, number: 6 },
+      { type: 'across', row: 4, col: 3, length: 2, number: 8 },
+      { type: 'down', row: 0, col: 0, length: 2, number: 1 },
+      { type: 'down', row: 0, col: 2, length: 5, number: 2 },
+      { type: 'down', row: 0, col: 4, length: 2, number: 4 }
+    ]
+  },
+
+  // Template 4: Mini themeless (6 words: realistic mini crossword)
+  mini: {
     pattern: [
       '.', '.', '.', '.', '#',
-      '#', '.', '#', '.', '.',
-      '#', '.', '#', '.', '#',
-      '.', '.', '.', '.', '.',
+      '.', '#', '.', '#', '.',
+      '.', '#', '.', '.', '.',
+      '.', '.', '.', '#', '.',
       '#', '.', '#', '#', '#'
     ],
     words: [
       { type: 'across', row: 0, col: 0, length: 4, number: 1 },
-      { type: 'across', row: 1, col: 3, length: 2, number: 5 }, // Very short
-      { type: 'across', row: 3, col: 0, length: 5, number: 7 },
-      { type: 'down', row: 0, col: 1, length: 3, number: 2 },
-      { type: 'down', row: 1, col: 3, length: 3, number: 5 }
+      { type: 'across', row: 1, col: 3, length: 2, number: 5 },
+      { type: 'across', row: 2, col: 2, length: 3, number: 7 },
+      { type: 'across', row: 3, col: 0, length: 3, number: 10 },
+      { type: 'down', row: 0, col: 0, length: 4, number: 1 },
+      { type: 'down', row: 0, col: 3, length: 4, number: 4 }
+    ]
+  },
+
+  // Template 5: Overlapping (8 words: maximum intersections)
+  overlapping: {
+    pattern: [
+      '.', '.', '.', '.', '.',
+      '#', '.', '.', '.', '#',
+      '.', '.', '.', '.', '.',
+      '#', '.', '.', '.', '#',
+      '.', '.', '.', '.', '.'
+    ],
+    words: [
+      { type: 'across', row: 0, col: 0, length: 5, number: 1 },
+      { type: 'across', row: 1, col: 1, length: 3, number: 6 },
+      { type: 'across', row: 2, col: 0, length: 5, number: 8 },
+      { type: 'across', row: 3, col: 1, length: 3, number: 13 },
+      { type: 'across', row: 4, col: 0, length: 5, number: 15 },
+      { type: 'down', row: 0, col: 1, length: 5, number: 2 },
+      { type: 'down', row: 0, col: 2, length: 5, number: 3 },
+      { type: 'down', row: 0, col: 3, length: 5, number: 4 }
     ]
   }
 };
