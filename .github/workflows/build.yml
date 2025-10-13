@@ -28,7 +28,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install deps
-        run: npm ci
+        run: |
+          echo "📦 Installing dependencies..."
+          npm ci
+          echo "✅ Dependencies installed"
 
       - name: Ensure folders
         run: |
@@ -37,16 +40,29 @@ jobs:
 
       - name: Generate today's puzzle (skip if exists)
         id: gen
+        env:
+          LLM_ENABLED: false
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           TODAY=$(date +'%Y-%m-%d')
           PUZ="public/puzzles/${TODAY}.json"
+          echo "Today's date: $TODAY"
+          echo "Looking for puzzle: $PUZ"
           if [ -f "$PUZ" ]; then
             echo "already=true" >> $GITHUB_OUTPUT
-            echo "Puzzle exists: $PUZ"
+            echo "✅ Puzzle exists: $PUZ"
           else
             echo "already=false" >> $GITHUB_OUTPUT
+            echo "🎲 Generating new puzzle..."
+            echo "Environment: LLM_ENABLED=$LLM_ENABLED"
             npm run generate
-            test -f "$PUZ" || (echo "Generator did not create $PUZ" && exit 1)
+            if [ -f "$PUZ" ]; then
+              echo "✅ Puzzle generated successfully: $PUZ"
+            else
+              echo "❌ Generator did not create $PUZ"
+              ls -la public/puzzles/ || echo "puzzles directory does not exist"
+              exit 1
+            fi
           fi
 
       - name: Prune old puzzles (>120 days)
