@@ -42,7 +42,6 @@ jobs:
         id: gen
         env:
           LLM_ENABLED: false
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           TODAY=$(date +'%Y-%m-%d')
           PUZ="public/puzzles/${TODAY}.json"
@@ -50,7 +49,7 @@ jobs:
           echo "Looking for puzzle: $PUZ"
           if [ -f "$PUZ" ]; then
             echo "already=true" >> $GITHUB_OUTPUT
-            echo "✅ Puzzle exists: $PUZ"
+            echo "✅ Puzzle already exists: $PUZ"
           else
             echo "already=false" >> $GITHUB_OUTPUT
             echo "🎲 Generating new puzzle..."
@@ -58,8 +57,11 @@ jobs:
             npm run generate
             if [ -f "$PUZ" ]; then
               echo "✅ Puzzle generated successfully: $PUZ"
+              echo "📄 Puzzle preview:"
+              head -10 "$PUZ"
             else
               echo "❌ Generator did not create $PUZ"
+              echo "📁 Contents of public/puzzles/:"
               ls -la public/puzzles/ || echo "puzzles directory does not exist"
               exit 1
             fi
@@ -81,9 +83,14 @@ jobs:
         run: |
           git config user.name  "wfdd-mini-bot"
           git config user.email "wfdd-mini-bot@users.noreply.github.com"
-          git add -A
-          git commit -m "chore: add puzzle $(date +'%Y-%m-%d')"
-          git push
+          git add public/puzzles/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: add puzzle $(date +'%Y-%m-%d')"
+            git push
+            echo "✅ Changes committed and pushed"
+          fi
 
       - name: Upload artifact for Pages
         uses: actions/upload-pages-artifact@v3
