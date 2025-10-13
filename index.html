@@ -89,6 +89,15 @@
       </div>
     </div>
   </div>
+
+  <!-- Admin Panel (hidden by default) -->
+  <div id="adminPanel" style="display:none;margin-top:20px;padding:12px;background:#fff3cd;border:1px solid #ffeaa7;border-radius:8px;">
+    <h4 style="margin:0 0 8px;color:#856404;">🔧 Admin Controls</h4>
+    <button id="forceRegenBtn" style="background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;margin-right:8px;">Force Regenerate Today's Puzzle</button>
+    <button id="clearCacheBtn" style="background:#6c757d;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">Clear LLM Cache</button>
+    <p style="margin:8px 0 0;font-size:0.8rem;color:#856404;">⚠️ Use carefully: This will regenerate the puzzle with fresh LLM clues.</p>
+  </div>
+
   <!-- Optional loader for generated puzzles -->
   <script>
     (function(){
@@ -120,16 +129,16 @@
     ],
     clues: {
       across: {
-        "1": "Sound waves connecting communities and sharing stories",
-        "7": "Airwaves buzzing with local stories and insights",
-        "8": "Funding support for community initiatives is vital",
-        "10": "Rules governing society's order and justice system",
-        "12": "Local entity shaping laws and policies for residents"
+        "1": "WFDD's platform for local news and community voices",
+        "7": "Triad's source for national news and local stories",
+        "8": "Funding awarded to local arts organization in Winston-Salem",
+        "10": "Forsyth County's new regulations on public gatherings",
+        "12": "Legislative body for North Carolina's governance"
       },
       down: {
-        "1": "Local insights through diligent reporting efforts",
-        "3": "Local airwaves deliver essential insights daily",
-        "4": "Local source for timely updates and community insights",
+        "1": "Local organization awarded grant for community projects",
+        "3": "WFDD's coverage of local events in this NC city",
+        "4": "Local public radio station serving the Triad community",
         "5": "In today's coverage",
         "9": "In today's coverage"
       }
@@ -582,6 +591,38 @@
   document.getElementById('revealLetterBtn').addEventListener('click', revealLetter);
   document.getElementById('revealWordBtn').addEventListener('click', revealWord);
   document.getElementById('giveUpBtn').addEventListener('click', () => finish({ dnf: true }));
+
+  // Admin panel functionality
+  let adminKeySequence = '';
+  document.addEventListener('keydown', (e) => {
+    adminKeySequence += e.key.toLowerCase();
+    if (adminKeySequence.includes('admin')) {
+      document.getElementById('adminPanel').style.display = 'block';
+      adminKeySequence = ''; // reset
+    }
+    if (adminKeySequence.length > 10) {
+      adminKeySequence = adminKeySequence.slice(-5); // keep last 5 chars
+    }
+  });
+
+  // Force regeneration (GitHub Actions trigger)
+  document.getElementById('forceRegenBtn').addEventListener('click', async () => {
+    if (!confirm('This will trigger a new puzzle generation. Continue?')) return;
+    
+    try {
+      // This would need to trigger your GitHub Actions workflow
+      // For now, just show instructions
+      alert('To force regeneration:\n\n1. Go to GitHub Actions\n2. Run "Build & Deploy WFDD Mini" workflow\n3. Or run: git commit --allow-empty -m "force: regenerate puzzle" && git push');
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  });
+
+  document.getElementById('clearCacheBtn').addEventListener('click', () => {
+    if (!confirm('Clear local browser cache and reload?')) return;
+    localStorage.clear();
+    location.reload(true);
+  });
 
   // start focus and render initial status
   setCursor(cursor);
