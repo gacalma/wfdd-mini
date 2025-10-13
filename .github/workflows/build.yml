@@ -44,6 +44,7 @@ jobs:
           LLM_ENABLED: ${{ secrets.LLM_ENABLED || 'false' }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           LLM_MODEL: gpt-4o-mini
+          NODE_ENV: production
         run: |
           TODAY=$(date +'%Y-%m-%d')
           PUZ="public/puzzles/${TODAY}.json"
@@ -60,20 +61,29 @@ jobs:
             echo "Node version: $(node --version)"
             echo "NPM version: $(npm --version)"
             
-            # Run generator and capture output
+            # Check required files exist
+            echo "📁 Checking required files..."
+            ls -la data/stopwords.txt || echo "❌ stopwords.txt missing"
+            ls -la scripts/generate.js || echo "❌ generate.js missing"
+            ls -la scripts/llmClues.js || echo "❌ llmClues.js missing"
+            
+            # Run generator with more verbose output and error capture
             echo "Running: npm run generate"
-            if npm run generate; then
-              echo "Generator completed successfully"
-            else
+            set -e  # Exit on any error
+            npm run generate 2>&1 | tee generator.log || {
               echo "❌ Generator command failed with exit code $?"
+              echo "📄 Generator log output:"
+              cat generator.log || echo "No log file"
               echo "📂 Current directory contents:"
               ls -la
               echo "📁 Public directory contents:"
               ls -la public/ || echo "public directory does not exist"
               echo "📁 Scripts directory contents:"  
               ls -la scripts/ || echo "scripts directory does not exist"
+              echo "📁 Data directory contents:"
+              ls -la data/ || echo "data directory does not exist"
               exit 1
-            fi
+            }
             
             # Check if puzzle file was created
             echo "Checking for puzzle file: $PUZ"
@@ -86,7 +96,7 @@ jobs:
               echo "📁 Contents of public/puzzles/:"
               ls -la public/puzzles/ || echo "puzzles directory does not exist"
               echo "📁 All files in public/:"
-              find public/ -type f -name "*.json" || echo "No JSON files in public/"
+              find public/ -type f -name "*.json" 2>/dev/null || echo "No JSON files in public/"
               exit 1
             fi
           fi

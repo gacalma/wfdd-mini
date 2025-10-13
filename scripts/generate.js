@@ -527,22 +527,51 @@ async function generatePuzzle() {
       }
     };
     
-    // Write to file
-    const outputPath = join(projectRoot, 'public/puzzles', `${dateStr}.json`);
-    writeFileSync(outputPath, JSON.stringify(puzzle, null, 2));
+    // Ensure output directory exists
+    const outputDir = join(projectRoot, 'public/puzzles');
+    const outputPath = join(outputDir, `${dateStr}.json`);
     
-    console.log(`✅ Puzzle generated successfully: ${outputPath}`);
-    console.log(`📰 Used ${sourceUrls.length} source URLs`);
+    try {
+      // Create directories if they don't exist
+      const fs = await import('fs/promises');
+      await fs.mkdir(outputDir, { recursive: true });
+      
+      // Write puzzle file
+      writeFileSync(outputPath, JSON.stringify(puzzle, null, 2));
+      
+      console.log(`✅ Puzzle generated successfully: ${outputPath}`);
+      console.log(`📰 Used ${sourceUrls.length} source URLs`);
+      
+      // Verify file was written correctly
+      const fileSize = (await fs.stat(outputPath)).size;
+      console.log(`📊 Puzzle file size: ${fileSize} bytes`);
+      
+    } catch (writeError) {
+      console.error('❌ Failed to write puzzle file:', writeError.message);
+      console.error('❌ Output path:', outputPath);
+      console.error('❌ Project root:', projectRoot);
+      throw writeError;
+    }
     
   } catch (error) {
     console.error('❌ Puzzle generation failed:', error.message);
+    console.error('❌ Stack trace:', error.stack);
+    console.error('❌ Current working directory:', process.cwd());
+    console.error('❌ Environment variables:', {
+      LLM_ENABLED: process.env.LLM_ENABLED,
+      NODE_ENV: process.env.NODE_ENV,
+      hasAPIKey: !!process.env.OPENAI_API_KEY
+    });
     process.exit(1);
   }
 }
 
 // Run if called directly
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  generatePuzzle();
+  generatePuzzle().catch(error => {
+    console.error('❌ Unhandled error in puzzle generation:', error);
+    process.exit(1);
+  });
 }
 
 export { generatePuzzle };
