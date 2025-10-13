@@ -11,6 +11,11 @@ permissions:
   pages: write
   id-token: write
 
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 env:
   TZ: America/New_York
   NODE_VERSION: 18
@@ -159,12 +164,12 @@ jobs:
           ls -la public/puzzles/ || echo "❌ puzzles directory not found"
 
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v5
         
       - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
           
       - name: Deploy to Pages
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
