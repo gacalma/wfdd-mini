@@ -72,6 +72,10 @@ jobs:
             echo "Node version: $(node --version)"
             echo "NPM version: $(npm --version)"
             
+            # Purge any existing clue cache so we generate fresh LLM clues
+            echo "🧹 Removing previous clue cache (if any) to force fresh LLM clues"
+            rm -f data/clue-cache.json || true
+
             # Check required files exist
             echo "📁 Checking required files..."
             ls -la data/stopwords.txt || echo "❌ stopwords.txt missing"
