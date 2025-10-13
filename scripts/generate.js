@@ -354,6 +354,9 @@ function extractCandidateWords(stories, stopwords) {
 
   // If we have very few candidates, extract more aggressively
   let finalWords = uniqueByOrder(sorted);
+  // Remove ambiguous directional or non-useful single words that often break clues
+  const BAD_SINGLE_WORDS = new Set(['NORTH','SOUTH','EAST','WEST','NEW','OLD','THE','A','AN']);
+  finalWords = finalWords.filter(w => !(w.length <= 4 && BAD_SINGLE_WORDS.has(w)));
   if (finalWords.length < 15) {
     console.log(`Only ${finalWords.length} candidates found, extracting more words...`);
     
@@ -486,18 +489,85 @@ async function generateClues(grid, stories, usedWords, usedWordSources, wordSpec
 
   // Helper to create heuristic clue text (fallback)
   function makeHeuristicClue(word) {
-    // Try to find word in story titles first
+    // Try to extract a sensible short clue by finding a sentence in the story content
+    // that contains the answer word, then replace the answer with a blank (____).
+    function stripHtml(s){ return s ? s.replace(/<[^>]+>/g, ' ') : ''; }
+    function escapeRegExp(str){ return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    const wordRe = new RegExp('\\b' + escapeRegExp(word) + '\\b', 'i');
+
+    // US states list to detect "North Carolina" style matches
+    const US_STATES = [
+      'ALABAMA','ALASKA','ARIZONA','ARKANSAS','CALIFORNIA','COLORADO','CONNECTICUT','DELAWARE',
+      'FLORIDA','GEORGIA','HAWAII','IDAHO','ILLINOIS','INDIANA','IOWA','KANSAS','KENTUCKY','LOUISIANA',
+      'MAINE','MARYLAND','MASSACHUSETTS','MICHIGAN','MINNESOTA','MISSISSIPPI','MISSOURI','MONTANA',
+      'NEBRASKA','NEVADA','NEW HAMPSHIRE','NEW JERSEY','NEW MEXICO','NEW YORK','NORTH CAROLINA','NORTH DAKOTA',
+      'OHIO','OKLAHOMA','OREGON','PENNSYLVANIA','RHODE ISLAND','SOUTH CAROLINA','SOUTH DAKOTA','TENNESSEE',
+      'TEXAS','UTAH','VERMONT','VIRGINIA','WASHINGTON','WEST VIRGINIA','WISCONSIN','WYOMING'
+    ];
+
+    const actionVerbs = new Set(['VOTE','VOTES','VOTED','VOTING','PLAN','PLANS','PLANNED','ANNOUNCE','ANNOUNCED','ANNOUNCES']);
+
     for (const story of stories) {
-      if (story.title.toUpperCase().includes(word)) {
-        // Simple title truncation
-        const title = story.title.length > 40 ? 
-          story.title.substring(0, 37) + '...' : 
-          story.title;
-        return `From: ${title}`;
+      const hay = stripHtml(story.content || story['content:encoded'] || story.contentSnippet || story.description || story.title || '');
+      if (!hay) continue;
+
+      // Split into sentences and search for a sentence containing the word
+      const sentences = hay.split(/(?<=[.!?])\s+/);
+      for (const s of sentences) {
+        if (wordRe.test(s)) {
+          const U = word.toUpperCase();
+
+          // 1) If this word is part of a US state name nearby (e.g., "North Carolina"), return a state-focused clue
+          const mState = s.toUpperCase().match(new RegExp("([A-Z]+\\s+" + escapeRegExp(U) + "|" + escapeRegExp(U) + "\\s+[A-Z]+)", 'i'));
+          if (mState) {
+            // search for any full state name in the sentence
+            const up = s.toUpperCase();
+            for (const st of US_STATES) {
+              if (up.includes(st)) {
+                return `U.S. state mentioned in story: ${st.split(' ').slice(0,2).join(' ')}`;
+              }
+            }
+            // generic state clue
+            return 'U.S. state mentioned in this story';
+          }
+
+          // 2) If the word is an action verb and sentence mentions GOP/Republican, craft an action clue
+          if (actionVerbs.has(U) && /\b(GOP|REPUBLICAN|REPUBLICANS)\b/i.test(s)) {
+            return `Action Republicans plan regarding the U.S. House map`;
+          }
+
+          // 3) Try to replace a multiword proper noun (up to 2 adjacent capitalized words) to avoid awkward blanks
+          const multiWordRe = new RegExp('([A-Z][a-z]+(?:\\s+[A-Z][a-z]+){0,2})', 'g');
+          const capitalMatches = s.match(multiWordRe) || [];
+          for (const cap of capitalMatches) {
+            if (new RegExp('\\b' + escapeRegExp(word) + '\\b', 'i').test(cap)) {
+              const clue = s.replace(cap, '____').replace(/\s+/g, ' ').trim();
+              return clue.length > 80 ? clue.slice(0,77).trim() + '...' : clue;
+            }
+          }
+
+          // Default: replace the answer word with blank
+          const replaced = s.replace(wordRe, '____');
+          const clean = replaced.replace(/\s+/g, ' ').trim();
+          const clue = clean.length > 80 ? clean.slice(0, 77).trim() + '...' : clean;
+          const title = story.title || '';
+          if (title && title.length < 60) return `${clue} — From: ${title}`;
+          return clue;
+        }
       }
     }
-    
-    // Fallback clues based on word
+
+    // If no sentence match, try matching word in titles (but hide the word)
+    for (const story of stories) {
+      const title = story.title || '';
+      if (title && wordRe.test(title)) {
+        const clue = title.replace(wordRe, '____');
+        return clue.length > 80 ? clue.slice(0,77).trim() + '...' : clue;
+      }
+    }
+
+    // Friendly small fallbacks
     const fallbackClues = {
       'RIVER': 'Flows through the Triad',
       'RADIO': 'WFDD medium',
@@ -509,7 +579,7 @@ async function generateClues(grid, stories, usedWords, usedWordSources, wordSpec
       'NPR': 'Public radio network',
       'WIN': 'Victory'
     };
-    
+
     return fallbackClues[word] || 'In today\'s coverage';
   }
 
