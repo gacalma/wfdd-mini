@@ -106,60 +106,95 @@
     <p style="margin:8px 0 0;font-size:0.8rem;color:#856404;">⚠️ Use carefully: This will regenerate the puzzle with fresh LLM clues.</p>
   </div>
 
-  <!-- Optional loader for generated puzzles -->
+  <!-- ROBUST PUZZLE LOADER - FORCE FRESH DATA -->
   <script>
-    (function(){
-      const today = new Date();
-      const y = today.getFullYear();
-      const m = String(today.getMonth()+1).padStart(2, '0');
-      const d = String(today.getDate()).padStart(2, '0');
-      const path = `public/puzzles/${y}-${m}-${d}.json`;
-      fetch(path + '?v=' + Date.now(), { 
+  // FORCE LOAD LATEST PUZZLE DATA - NO COMPROMISES
+  window.PUZZLE = null; // Start with nothing
+  
+  (async function loadPuzzle() {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const puzzleUrl = `public/puzzles/${dateStr}.json`;
+    
+    // MAXIMUM CACHE BUSTING
+    const cacheBuster = `?bust=${Date.now()}&rand=${Math.random()}&force=1`;
+    const fullUrl = puzzleUrl + cacheBuster;
+    
+    console.log('🎯 LOADING FRESH PUZZLE:', fullUrl);
+    
+    try {
+      const response = await fetch(fullUrl, {
+        method: 'GET',
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' }
-      })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => { 
-          if (data) { 
-            window.PUZZLE = data; 
-            console.log('Loaded fresh puzzle:', data.id);
-          } 
-        })
-        .catch(()=>{});
-    })();
-  </script>
-
-  <!-- Inline puzzle so it works even if opened as file:// -->
-  <script>
-  const PUZZLE = {
-    id: "wfdd-mini-2025-10-13",
-    date: "2025-10-13",
-    title: "WFDD One-Minute Crossword",
-    size: 5,
-    grid: [
-      "A","S","C","#","#",
-      "T","H","E","L","I",
-      "V",".","O",".","C",
-      "#","O","O","K","E",
-      "#","#","B","E","#"
-    ],
-    clues: {
-      across: {
-        "1": "Public hearing on Cook's closure set for October 28",
-        "4": "Public hearing on Cook's fate by WS/FCS next Tuesday", 
-        "8": "Public hearing on closure of a literacy model school",
-        "13": "Public hearing on closure of Cook Literacy Model School"
-      },
-      down: {
-        "1": "LendingTree founder who died in weekend accident",
-        "3": "LendingTree's founder died in an ATV accident near Charlotte",
-        "7": "Pastor David Black's lawsuit involves this federal agency"
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
+      const puzzleData = await response.json();
+      console.log('✅ PUZZLE LOADED:', puzzleData);
+      
+      // FORCE SET THE PUZZLE
+      window.PUZZLE = puzzleData;
+      
+      // Trigger immediate initialization if DOM is ready
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        console.log('🚀 Initializing puzzle immediately...');
+        initializePuzzle();
+      }
+      
+    } catch (error) {
+      console.error('❌ PUZZLE LOAD FAILED:', error);
+      
+      // EMERGENCY FALLBACK WITH CURRENT DATA
+      window.PUZZLE = {
+        "id": "wfdd-mini-2025-10-13",
+        "date": "2025-10-13", 
+        "title": "WFDD One-Minute Crossword",
+        "size": 5,
+        "grid": ["W","S","F","C","S","#","#","#","#","#","H","O","L","D","#","A","T","V","#","#","C","E","O","#","#"],
+        "clues": {
+          "across": {
+            "1": "Winston-Salem/Forsyth County Schools system",
+            "6": "What WS/FCS will do regarding Cook Elementary", 
+            "8": "All-terrain vehicle in fatal accident",
+            "11": "LendingTree chief executive officer"
+          },
+          "down": {
+            "1": "School district holding Cook hearing",
+            "3": "Forsyth County Schools abbreviation", 
+            "7": "Vehicle type in Charlotte-area accident"
+          }
+        }
+      };
+      
+      console.log('🔄 Using emergency fallback puzzle');
+      if (document.readyState !== 'loading') initializePuzzle();
     }
-  };
-
-  // ---------- Step 2a FIX: type writes letter + auto-advance; Backspace erases + steps back ----------
-  const boardEl = document.getElementById('board');
+  })();
+  
+  // Make sure puzzle initializes when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.PUZZLE) initializePuzzle();
+    });
+  }
+  
+  function initializePuzzle() {
+    if (!window.PUZZLE) {
+      console.error('No puzzle data available!');
+      return;
+    }
+    console.log('🎮 Initializing puzzle with data:', window.PUZZLE.id);
+    
+    // ---------- PUZZLE INITIALIZATION CODE ----------
+    const boardEl = document.getElementById('board');
   const acrossEl = document.getElementById('across');
   const downEl = document.getElementById('down');
 
@@ -651,6 +686,10 @@
   // start focus and render initial status
   setCursor(cursor);
   renderStatus();
+  } // End of initializePuzzle function
+
+  // Load puzzle data and initialize
+  loadPuzzleRobustly();
 </script>
 </body>
 </html>
