@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 env:
   TZ: America/New_York
@@ -156,7 +158,13 @@ jobs:
           echo "🧩 Checking for puzzle files:"
           ls -la public/puzzles/ || echo "❌ puzzles directory not found"
 
-      - name: Complete
-        run: |
-          echo "✅ Puzzle generation complete!"
-          echo "🚀 Vercel will auto-deploy from this commit"
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+        
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: '.'
+          
+      - name: Deploy to Pages
+        uses: actions/deploy-pages@v2
