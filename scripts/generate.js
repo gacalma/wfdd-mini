@@ -263,20 +263,20 @@ function extractCandidateWords(stories, stopwords) {
     const titleText = story.title || '';
     const summaryText = story.summary || '';
     
-    // Prioritize title words (often better crossword material)
+    // Extract ALL words from title and summary (be more liberal)
     const titleWords = titleText
       .split(/\s+/)
       .map(normalizeWord)
-      .filter(w => w.length >= 3 && w.length <= 7)
-      .filter(w => !stopwords.has(w))
+      .filter(w => w.length >= 3 && w.length <= 8) // Allow longer words
+      .filter(w => !stopwords.has(w.toLowerCase())) // Check lowercase stopwords
       .filter(w => /^[A-Z]+$/.test(w));
     
-    // Get summary words
+    // Get summary words (extract more aggressively)
     const summaryWords = summaryText
       .split(/\s+/)
-      .map(normalizeWord)
-      .filter(w => w.length >= 3 && w.length <= 7)
-      .filter(w => !stopwords.has(w))
+      .map(normalizeWord)  
+      .filter(w => w.length >= 3 && w.length <= 8) // Allow longer words
+      .filter(w => !stopwords.has(w.toLowerCase())) // Check lowercase stopwords  
       .filter(w => /^[A-Z]+$/.test(w));
     
     // Process title words first (higher priority)
@@ -338,9 +338,33 @@ function extractCandidateWords(stories, stopwords) {
     return a.localeCompare(b);
   });
 
-  console.log(`Enhanced word extraction: ${sorted.length} candidates, ${Object.keys(wordSources).filter(w => wordSources[w].priority === 1).length} from titles`);
+  // If we have very few candidates, extract more aggressively
+  let finalWords = uniqueByOrder(sorted);
+  if (finalWords.length < 15) {
+    console.log(`Only ${finalWords.length} candidates found, extracting more words...`);
+    
+    // Extract more words with looser restrictions
+    stories.forEach(story => {
+      const allText = `${story.title} ${story.summary}`.toUpperCase();
+      const moreWords = allText
+        .split(/\W+/)
+        .filter(w => w.length >= 3 && w.length <= 6)
+        .filter(w => /^[A-Z]+$/.test(w))
+        .filter(w => !stopwords.has(w.toLowerCase()))
+        .filter(w => !finalWords.includes(w));
+      
+      moreWords.forEach(word => {
+        if (!wordSources[word]) {
+          wordSources[word] = { ...story, priority: 3 };
+          finalWords.push(word);
+        }
+      });
+    });
+  }
+
+  console.log(`Enhanced word extraction: ${finalWords.length} candidates, ${Object.keys(wordSources).filter(w => wordSources[w].priority === 1).length} from titles`);
   
-  return { words: uniqueByOrder(sorted), wordSources };
+  return { words: finalWords, wordSources };
 }
 
 function buildCrosswordGrid(llmWords, candidates, wordSources = {}, preselectedTemplate = null) {
@@ -364,19 +388,37 @@ function buildCrosswordGrid(llmWords, candidates, wordSources = {}, preselectedT
       byLength[word.length].push(word);
     });
     
-    // Fallback words by length
+    // Fallback words by length (diverse vocabulary)
     const fallbackWords = {
-      2: ['NO', 'GO', 'UP'],
-      3: ['THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'HAD', 'DAY', 'GET', 'USE', 'MAN', 'NEW', 'NOW', 'WAY', 'MAY', 'SAY'],
-      4: ['NEWS', 'CITY', 'TIME', 'WORK', 'YEAR', 'AREA', 'PLAN', 'TEAM'],
-      5: ['RADIO', 'STATE', 'COURT', 'MONEY', 'HOUSE', 'WATER', 'BOARD']
+      2: ['NO', 'GO', 'UP', 'IN', 'ON', 'AT', 'TO', 'OF', 'IT', 'IS', 'WE', 'MY'],
+      3: ['THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'HAD', 'DAY', 'GET', 'USE', 'MAN', 'NEW', 'NOW', 'WAY', 'MAY', 'SAY', 'CAR', 'BOY', 'SUN', 'DOG', 'CAT', 'RUN', 'WIN', 'LAW', 'WAR', 'AIR', 'SEA'],
+      4: ['NEWS', 'CITY', 'TIME', 'WORK', 'YEAR', 'AREA', 'PLAN', 'TEAM', 'PARK', 'ROAD', 'FOOD', 'GAME', 'BOOK', 'WORD', 'LIFE', 'FIRE', 'WIND', 'RAIN', 'SNOW', 'TREE', 'DOOR', 'WALL', 'HOME', 'LOVE'],
+      5: ['RADIO', 'STATE', 'COURT', 'MONEY', 'HOUSE', 'WATER', 'BOARD', 'MUSIC', 'WORLD', 'STORY', 'LIGHT', 'SOUND', 'VOICE', 'PLACE', 'POWER', 'PEACE', 'HAPPY', 'SMILE', 'LAUGH', 'DANCE', 'HEART', 'DREAM', 'TRUTH', 'HONOR']
     };
     
     selectedWords = [];
     for (const length of requiredLengths) {
-      const available = byLength[length] || fallbackWords[length] || [];
-      const word = available.find(w => !selectedWords.includes(w)) || 
-                   fallbackWords[length]?.[0] || 'A'.repeat(length);
+      // First try extracted candidates  
+      const available = byLength[length] || [];
+      let word = available.find(w => !selectedWords.includes(w));
+      
+      // If no candidates available, try fallback words
+      if (!word) {
+        const fallbacks = fallbackWords[length] || [];
+        word = fallbacks.find(w => !selectedWords.includes(w));
+      }
+      
+      // If still no word, generate a unique placeholder
+      if (!word) {
+        word = 'WORD' + (selectedWords.length + 1);
+        // Pad or trim to correct length
+        if (word.length < length) {
+          word = word.padEnd(length, 'X');
+        } else if (word.length > length) {
+          word = word.slice(0, length);
+        }
+      }
+      
       selectedWords.push(word);
     }
   }

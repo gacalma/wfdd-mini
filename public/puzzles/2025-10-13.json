@@ -4,42 +4,43 @@
   "title": "WFDD One-Minute Crossword",
   "size": 5,
   "grid": [
-    "R",
+    "A",
     "S",
-    "R",
     "C",
-    "R",
-    "A",
     "#",
-    "A",
     "#",
-    "A",
-    "D",
-    "A",
-    "D",
+    "T",
+    "H",
+    "E",
+    "L",
     "I",
-    "D",
-    "I",
-    "#",
-    "I",
-    "#",
-    "I",
+    "V",
+    ".",
     "O",
-    "A",
+    ".",
+    "C",
+    null,
     "O",
-    "I",
-    "O"
+    "O",
+    "K",
+    "E",
+    "#",
+    "#",
+    "B",
+    "E",
+    null
   ],
   "clues": {
     "across": {
-      "1": "Public hearing on closing this Winston-Salem school",
-      "6": "WFDD's airwaves serve this city in the Triad",
-      "11": "WFDD's airwaves serve this city in the Triad"
+      "1": "Public hearing on Cook's closure set for October 28",
+      "4": "Public hearing on Cook's fate by WS/FCS next Tuesday",
+      "8": "Public hearing on closure of a literacy model school",
+      "13": "Public hearing on closure of Cook Literacy Model School"
     },
     "down": {
-      "1": "WFDD's airwaves serve this city in the Triad",
-      "3": "WFDD's airwaves serve this city in the Triad",
-      "5": "WFDD's airwaves serve this city in the Triad"
+      "1": "LendingTree founder who died in weekend accident",
+      "3": "LendingTree's founder died in an ATV accident near Charlotte",
+      "7": "Pastor David Black's lawsuit involves this federal agency"
     }
   },
   "meta": {
