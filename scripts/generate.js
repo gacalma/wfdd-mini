@@ -155,44 +155,78 @@ function extractCandidateWords(stories, stopwords) {
   const wordSources = {}; // track which story each word came from
   const allWords = [];
   
-  // Extract words from each story individually to track sources
+  // Enhanced word extraction with smarter filtering for LLM usage
   stories.forEach((story, storyIndex) => {
-    const text = `${story.title} ${story.summary}`;
-    const words = text
+    const titleText = story.title || '';
+    const summaryText = story.summary || '';
+    
+    // Prioritize title words (often better crossword material)
+    const titleWords = titleText
       .split(/\s+/)
       .map(normalizeWord)
       .filter(w => w.length >= 3 && w.length <= 7)
       .filter(w => !stopwords.has(w))
       .filter(w => /^[A-Z]+$/.test(w));
     
-    words.forEach(word => {
+    // Get summary words
+    const summaryWords = summaryText
+      .split(/\s+/)
+      .map(normalizeWord)
+      .filter(w => w.length >= 3 && w.length <= 7)
+      .filter(w => !stopwords.has(w))
+      .filter(w => /^[A-Z]+$/.test(w));
+    
+    // Process title words first (higher priority)
+    titleWords.forEach(word => {
       if (!wordSources[word]) {
-        wordSources[word] = story; // track first occurrence
+        wordSources[word] = { 
+          ...story, 
+          wordContext: 'title',
+          priority: 1
+        };
+        allWords.push(word);
+      }
+    });
+    
+    // Then summary words (lower priority, skip if already in title)
+    summaryWords.forEach(word => {
+      if (!wordSources[word]) {
+        wordSources[word] = { 
+          ...story, 
+          wordContext: 'summary',
+          priority: 2
+        };
         allWords.push(word);
       }
     });
   });
 
-  // Count occurrences across all stories
+  // Enhanced sorting: prioritize title words and proper nouns
   const counts = {};
-  stories.forEach(story => {
-    const text = `${story.title} ${story.summary}`;
-    const words = text
-      .split(/\s+/)
-      .map(normalizeWord)
-      .filter(w => w.length >= 3 && w.length <= 7)
-      .filter(w => !stopwords.has(w))
-      .filter(w => /^[A-Z]+$/.test(w));
-    
-    words.forEach(w => counts[w] = (counts[w] || 0) + 1);
+  const allText = stories.map(s => `${s.title} ${s.summary}`).join(' ');
+  
+  allWords.forEach(word => {
+    // Count total occurrences
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    counts[word] = (allText.match(regex) || []).length;
   });
 
-  // Sort by uniqueness (count=1 first), then alphabetically
+  // Smart sorting for better crossword words
   const sorted = Object.keys(counts).sort((a, b) => {
+    // First priority: words from titles
+    const aPriority = wordSources[a]?.priority || 3;
+    const bPriority = wordSources[b]?.priority || 3;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    
+    // Second priority: uniqueness (prefer words appearing once)
     if (counts[a] !== counts[b]) return counts[a] - counts[b];
+    
+    // Third priority: alphabetical
     return a.localeCompare(b);
   });
 
+  console.log(`Enhanced word extraction: ${sorted.length} candidates, ${Object.keys(wordSources).filter(w => wordSources[w].priority === 1).length} from titles`);
+  
   return { words: uniqueByOrder(sorted), wordSources };
 }
 

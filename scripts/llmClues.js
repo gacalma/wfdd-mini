@@ -51,18 +51,23 @@ export async function generateClueLLM({ answer, title, url }) {
     }
   } catch {}
 
-  const sys = `You write fair, succinct crossword clues for a daily 5x5 "mini" puzzle for a public radio site.
-Rules:
-- Max 60 characters.
-- No quotations, no punctuation at the end.
-- Do NOT include or spell the answer or obvious anagrams.
-- Keep neutral, local-civic tone.`;
+  const sys = `You write engaging crossword clues for WFDD public radio's daily mini puzzle, based on current local and national news.
 
-  const user = `Answer: ${answer.toUpperCase()}
-Story title: ${title || 'WFDD coverage'}
-Context (trimmed article text):
-${article || '(no extract)'}
-Write ONE clue (<=60 chars) that points to the answer without revealing it.`;
+Rules:
+- Max 60 characters total
+- Reference the news context subtly, not directly
+- Do NOT include the answer word or obvious anagrams  
+- Use active, precise language
+- No quotes or end punctuation
+- Neutral journalistic tone`;
+
+  const user = `ANSWER: ${answer.toUpperCase()}
+NEWS STORY: "${title || 'WFDD coverage'}"
+ARTICLE CONTEXT: ${article || title || 'Local news coverage'}
+
+Create a crossword clue that connects the answer to this news story without giving it away. Reference the topic or context, not the exact words.
+
+CLUE (max 60 chars):`;
 
   try {
     const ctrl = AbortSignal.timeout(5000);

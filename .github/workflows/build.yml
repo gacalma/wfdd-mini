@@ -41,7 +41,9 @@ jobs:
       - name: Generate today's puzzle (skip if exists)
         id: gen
         env:
-          LLM_ENABLED: false
+          LLM_ENABLED: ${{ secrets.LLM_ENABLED || 'false' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_MODEL: gpt-4o-mini
         run: |
           TODAY=$(date +'%Y-%m-%d')
           PUZ="public/puzzles/${TODAY}.json"
