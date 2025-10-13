@@ -5,42 +5,41 @@
   "size": 5,
   "grid": [
     "A",
-    "S",
-    "G",
-    "#",
-    "#",
-    "T",
-    "V",
     "O",
     "T",
-    "C",
-    "V",
-    ".",
-    "P",
-    ".",
-    "E",
-    null,
+    "T",
+    "#",
     "M",
+    "#",
+    ".",
+    "H",
+    "O",
     "I",
+    "#",
+    "A",
+    "E",
+    "V",
     "D",
     "O",
+    "P",
+    "Y",
+    ".",
+    "#",
+    ".",
     "#",
     "#",
-    "T",
-    "H",
-    null
+    "#"
   ],
   "clues": {
     "across": {
-      "1": "Public hearing on Cook's closure set for October 28",
-      "4": "GOP's new map aims for an 11th seat in this state",
-      "8": "GOP plans to vote on new House map in this NC city",
-      "13": "GOP's plan to redraw this state's House map in Raleigh"
+      "1": "GOP's new map aims for an 11th seat in this state",
+      "5": "WFDD's coverage of local events in Forsyth County",
+      "7": "LendingTree CEO Doug Lebda's tragic weekend accident",
+      "10": "Raleigh's GOP plans to vote on House district changes"
     },
     "down": {
-      "1": "LendingTree CEO Doug Lebda's tragic weekend accident",
-      "3": "NC Republicans plan to redraw this for 2026 elections",
-      "7": "LendingTree's founder died in an ATV accident near Charlotte"
+      "1": "GOP's plan to redraw U.S. House map in this state",
+      "4": "GOP's plan to redraw this state's House map in Raleigh"
     }
   },
   "meta": {
@@ -49,7 +48,7 @@
       "https://www.wfdd.org/education/2025-10-13/ws-fcs-to-hold-public-hearing-on-closing-cook-elementary-school",
       "https://www.wfdd.org/2025-10-13/lendingtree-ceo-doug-lebda-died-over-the-weekend-in-atv-accident-company-says",
       "https://www.wfdd.org/education/2025-10-13/carolina-curious-what-is-the-status-of-leandro-could-it-help-ws-fcs-amid-budget-crisis",
-      "https://www.wfdd.org/national/2025-10-13/tackles-projectiles-and-gunfire-many-fear-ice-tactics-are-growing-more-violent"
+      "https://www.npr.org/sections/the-picture-show/2025/10/13/g-s1-92838/ecuador-la-reinvencion-andina-de-la-cumbia"
     ]
   }
 }

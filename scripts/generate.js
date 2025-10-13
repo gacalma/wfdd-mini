@@ -7,8 +7,8 @@ import { generateClueLLM, selectCrosswordWordsLLM } from './llmClues.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = dirname(__dirname);
 
-const WFDD_LOCAL = "https://www.wfdd.org/local.rss";
-const NPR_TOP = "https://www.wfdd.org/tags/npr-top-stories.rss";
+const WFDD_LOCAL = "https://www.wfdd.org/mini.rss";
+const NPR_TOP = "https://feeds.npr.org/1001/rss.xml";
 
 // Multiple 5x5 crossword patterns for variety (substantial puzzles only)
 const GRID_TEMPLATES = {
@@ -375,7 +375,6 @@ function buildCrosswordGrid(llmWords, candidates, wordSources = {}, preselectedT
   console.log(`Selected template: ${templateName} with ${template.words.length} words`);
   
   let selectedWords = llmWords;
-  const requiredLengths = template.words.map(w => w.length).sort((a,b) => b-a);
   
   // Fallback to heuristic selection if LLM fails
   if (!selectedWords || selectedWords.length !== template.words.length) {
@@ -397,14 +396,17 @@ function buildCrosswordGrid(llmWords, candidates, wordSources = {}, preselectedT
     };
     
     selectedWords = [];
-    for (const length of requiredLengths) {
-      // First try extracted candidates  
-      const available = byLength[length] || [];
+    // Select words in the exact order needed by template
+    template.words.forEach((wordSpec, index) => {
+      const requiredLength = wordSpec.length;
+      
+      // First try extracted candidates of the right length
+      const available = byLength[requiredLength] || [];
       let word = available.find(w => !selectedWords.includes(w));
       
       // If no candidates available, try fallback words
       if (!word) {
-        const fallbacks = fallbackWords[length] || [];
+        const fallbacks = fallbackWords[requiredLength] || [];
         word = fallbacks.find(w => !selectedWords.includes(w));
       }
       
@@ -412,15 +414,15 @@ function buildCrosswordGrid(llmWords, candidates, wordSources = {}, preselectedT
       if (!word) {
         word = 'WORD' + (selectedWords.length + 1);
         // Pad or trim to correct length
-        if (word.length < length) {
-          word = word.padEnd(length, 'X');
-        } else if (word.length > length) {
-          word = word.slice(0, length);
+        if (word.length < requiredLength) {
+          word = word.padEnd(requiredLength, 'X');
+        } else if (word.length > requiredLength) {
+          word = word.slice(0, requiredLength);
         }
       }
       
       selectedWords.push(word);
-    }
+    });
   }
   
   console.log('Using crossword words:', selectedWords);
