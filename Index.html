@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WFDD One-Minute Crossword</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --grid: #d9d9d9;
+      --block:#231f20;
+      --focus:#16528E;
+      --cell:#fff;
+      --ink:#111;
+      --muted:#666;
+    }
+    body{margin:0;font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;background:#fafafa;color:var(--ink)}
+    .wrap{max-width:920px;margin:0 auto;padding:16px}
+    h1{margin:0 0 6px 0;font-size:1.4rem}
+    .sub{color:var(--muted);margin:0 0 16px}
+    .board{display:grid;grid-template-columns:repeat(5,56px);grid-template-rows:repeat(5,56px);gap:4px;margin:8px 0 16px}
+    .cell{
+      width:56px;height:56px;border:1px solid var(--grid);
+      background:var(--cell);display:flex;align-items:center;justify-content:center;
+      position:relative;border-radius:6px;overflow:hidden;
+    }
+    .cell.block{background:var(--block);border-color:var(--block)}
+    .num{position:absolute;top:3px;left:5px;font-size:.65rem;color:var(--muted)}
+    .letter{
+      width:100%;height:100%;border:0;text-align:center;font-weight:800;font-size:1.25rem;
+      text-transform:uppercase;outline:none;background:transparent;color:var(--ink);
+    }
+    .letter:focus{box-shadow: inset 0 0 0 3px var(--focus);border-radius:6px}
+    .panel{background:#fff;border:1px solid #eee;border-radius:12px;padding:12px}
+    .clues{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .clues h3{margin:0 0 6px}
+    .clues ul{margin:0;padding-left:20px}
+    .hint{color:var(--muted);font-size:.9rem}
+    .word-hilite{outline:2px solid #cfe2ff}
+    .cursor{outline:3px solid var(--focus)}
+    button{background:#007bff;color:white;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-size:0.9rem}
+    button:hover{background:#0056b3}
+    button:active{background:#004085}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>WFDD One-Minute Crossword</h1>
+    <p class="sub">A daily 5x5 mini crossword puzzle based on WFDD news stories. <a href="https://wfdd.org/mini" target="_blank" rel="noopener">Play online</a> or print and play on paper.</p>
+    <div id="board" class="board" aria-label="Crossword grid"></div>
+
+    <div class="panel">
+      <div id="statusBar" style="display:flex;gap:12px;align-items:center;margin:8px 0;font-weight:700;"></div>
+      <div id="controls" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;">
+        <button id="revealLetterBtn" type="button">Reveal letter (−2s)</button>
+        <button id="revealWordBtn" type="button">Reveal word (−10s)</button>
+        <button id="giveUpBtn" type="button">Give up</button>
+      </div>
+      <div class="clues">
+        <div>
+          <h3>Across</h3>
+          <ul id="across"></ul>
+        </div>
+        <div>
+          <h3>Down</h3>
+          <ul id="down"></ul>
+        </div>
+      </div>
+      <div id="results"></div>
+      
+      <div id="scoreBox" style="margin-top:12px; display:none;">
+        <h3>Submit your score for today's leaderboard</h3>
+        <form id="scoreForm">
+          <label>Email:
+            <input id="scoreEmail" type="email" required placeholder="you@example.com" style="padding:8px;border:1px solid #ccc;border-radius:8px;width:260px;">
+          </label>
+          <button id="scoreSubmitBtn" type="submit" style="margin-left:8px;">Submit score</button>
+          <div id="scoreMsg" class="hint" style="margin-top:6px;"></div>
+        </form>
+      </div>
+
+      <div id="shareButtons" style="margin-top:12px; display:none;">
+        <strong>Invite friends:</strong>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+          <a id="shareFacebook" target="_blank" rel="noopener" style="background:#1877f2;color:white;padding:6px 12px;border-radius:4px;text-decoration:none;font-size:0.9rem;">Facebook</a>
+          <a id="shareX" target="_blank" rel="noopener" style="background:#000;color:white;padding:6px 12px;border-radius:4px;text-decoration:none;font-size:0.9rem;">X</a>
+          <a id="shareBluesky" target="_blank" rel="noopener" style="background:#0085ff;color:white;padding:6px 12px;border-radius:4px;text-decoration:none;font-size:0.9rem;">Bluesky</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Optional loader for generated puzzles -->
+  <script>
+    (function(){
+      const today = new Date();
+      const y = today.getFullYear();
+      const m = String(today.getMonth()+1).padStart(2, '0');
+      const d = String(today.getDate()).padStart(2, '0');
+      const path = `public/puzzles/${y}-${m}-${d}.json`;
+      fetch(path, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) { window.PUZZLE = data; } })
+        .catch(()=>{});
+    })();
+  </script>
+
+  <!-- Inline puzzle so it works even if opened as file:// -->
+  <script>
+  const PUZZLE = {
+    id: "wfdd-mini-inline",
+    date: "2025-10-13",
+    size: 5,
+    grid: [
+      "R","I","V","E","R",
+      "A","#","C","I","T",
+      "D","H","H","#","S",
+      "I","N","E","W","S",
+      "N","#","P","A","R"
+    ],
+    clues: {
+      across: {
+        "1": "Flows through the Triad (5)",
+        "3": "Local ___ meeting: agenda posted Fri (4)",
+        "4": "State agency for health, abbr. (4)",
+        "6": "WFDD airs evening ___ (5)",
+        "7": "Pocket park feature (3)"
+      },
+      down: {
+        "1": "WFDD coverage often mentions this waterway (5)",
+        "2": "Governing body meeting (3)",
+        "3": "City tag you see on stories (4)",
+        "5": "North Carolina agency, abbr. (3)",
+        "6": "Short game on a green (3)"
+      }
+    }
+  };
+
+  // ---------- Step 2a FIX: type writes letter + auto-advance; Backspace erases + steps back ----------
+  const boardEl = document.getElementById('board');
+  const acrossEl = document.getElementById('across');
+  const downEl = document.getElementById('down');
+
+  const size = PUZZLE.size;
+  const N = size * size;
+  const cells = new Array(N);
+  const isBlock = i => PUZZLE.grid[i] === '#';
+  const rcToI = (r,c)=> r*size + c;
+  const iToRC = i => [Math.floor(i/size), i%size];
+
+  // word maps and numbering
+  function buildWordStarts(){
+    const starts = {across:{}, down:{}}, numMap = {};
+    let num = 0;
+    for(let r=0;r<size;r++){
+      for(let c=0;c<size;c++){
+        const i = rcToI(r,c);
+        if(isBlock(i)) continue;
+        const startAcross = (c===0 || isBlock(rcToI(r,c-1)));
+        const startDown   = (r===0 || isBlock(rcToI(r-1,c)));
+        if(startAcross || startDown){
+          num++;
+          numMap[i] = num;
+          if(startAcross){
+            const arr=[]; let cc=c;
+            while(cc<size && !isBlock(rcToI(r,cc))){ arr.push(rcToI(r,cc)); cc++; }
+            starts.across[num]=arr;
+          }
+          if(startDown){
+            const arr=[]; let rr=r;
+            while(rr<size && !isBlock(rcToI(rr,c))){ arr.push(rcToI(rr,c)); rr++; }
+            starts.down[num]=arr;
+          }
+        }
+      }
+    }
+    return {starts,numMap};
+  }
+  const {starts,numMap} = buildWordStarts();
+
+  // render grid
+  for(let i=0;i<N;i++){
+    const ch = PUZZLE.grid[i];
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (ch === '#' ? ' block' : '');
+    if(numMap[i]){
+      const n = document.createElement('div');
+      n.className = 'num';
+      n.textContent = numMap[i];
+      cell.appendChild(n);
+    }
+    if(ch !== '#'){
+      const inp = document.createElement('input');
+      inp.className = 'letter';
+      inp.maxLength = 1;
+      inp.dataset.index = String(i);
+      inp.addEventListener('focus', ()=> setCursor(i));
+      // keydown drives all input so we never lose the letter before focus moves
+      inp.addEventListener('keydown', onKeyDown);
+      cell.appendChild(inp);
+      cells[i] = inp;
+    }
+    boardEl.appendChild(cell);
+  }
+
+  // render clues (click to jump)
+  Object.entries(PUZZLE.clues.across).forEach(([n,txt])=>{
+    const li = document.createElement('li'); li.textContent = `${n}. ${txt}`;
+    li.style.cursor='pointer';
+    li.addEventListener('click', ()=>jumpToWord('across', Number(n)));
+    acrossEl.appendChild(li);
+  });
+  Object.entries(PUZZLE.clues.down).forEach(([n,txt])=>{
+    const li = document.createElement('li'); li.textContent = `${n}. ${txt}`;
+    li.style.cursor='pointer';
+    li.addEventListener('click', ()=>jumpToWord('down', Number(n)));
+    downEl.appendChild(li);
+  });
+
+  // state
+  let dir = 'across';
+  let cursor = firstNonBlock();
+
+  // timer & reveal state
+  let started = false;
+  let timeLeft = 60;
+  let timerId = null;
+  let revealLetterCount = 0;
+  let revealWordCount = 0;
+
+  function firstNonBlock(){ for(let i=0;i<N;i++) if(!isBlock(i)) return i; return 0; }
+  function currentWordCells(){
+    // Find which word contains the current cursor position
+    const wordLists = dir === 'across' ? starts.across : starts.down;
+    for (const [num, cells] of Object.entries(wordLists)) {
+      if (cells.includes(cursor)) {
+        return cells;
+      }
+    }
+    return [cursor]; // fallback for isolated cells
+  }
+  function setCursor(i){
+    if(isBlock(i)) return;
+    cursor = i;
+    highlightWord();
+    const el = cells[i];
+    if(el) el.focus();
+  }
+  function highlightWord(){
+    for(let i=0;i<N;i++){
+      const el = cells[i];
+      if(!el) continue;
+      el.parentElement.classList.remove('word-hilite','cursor');
+    }
+    for(const i of currentWordCells()){
+      const el = cells[i];
+      if(el) el.parentElement.classList.add('word-hilite');
+    }
+    const curEl = cells[cursor];
+    if(curEl) curEl.parentElement.classList.add('cursor');
+  }
+
+  function renderStatus() {
+    const statusEl = document.getElementById('statusBar');
+    const dirText = dir.charAt(0).toUpperCase() + dir.slice(1);
+    statusEl.textContent = `Time: ${timeLeft}s • Dir: ${dirText}`;
+  }
+
+  function startIfNeededOnLetter() {
+    if (!started) {
+      started = true;
+      timerId = setInterval(tick, 1000);
+    }
+  }
+
+  function tick() {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      timeLeft = 0;
+      clearInterval(timerId);
+      timerId = null;
+      finish({ dnf: true });
+    }
+    renderStatus();
+  }
+
+  function isSolved() {
+    for (let i = 0; i < N; i++) {
+      if (PUZZLE.grid[i] === '#') continue;
+      const el = cells[i];
+      if (!el || el.value.toUpperCase() !== PUZZLE.grid[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function revealLetter() {
+    if (isBlock(cursor)) return;
+    const el = cells[cursor];
+    if (el) {
+      el.value = PUZZLE.grid[cursor];
+      revealLetterCount++;
+      timeLeft = Math.max(0, timeLeft - 2);
+      renderStatus();
+      if (isSolved() && timeLeft > 0) {
+        finish({ dnf: false });
+      }
+    }
+  }
+
+  function revealWord() {
+    const word = currentWordCells();
+    for (const i of word) {
+      if (!isBlock(i)) {
+        const el = cells[i];
+        if (el) el.value = PUZZLE.grid[i];
+      }
+    }
+    revealWordCount++;
+    timeLeft = Math.max(0, timeLeft - 10);
+    renderStatus();
+    if (isSolved() && timeLeft > 0) {
+      finish({ dnf: false });
+    }
+  }
+
+  function emojiBoard() {
+    let result = '';
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const i = rcToI(r, c);
+        if (PUZZLE.grid[i] === '#') {
+          result += '⬛';
+        } else {
+          const el = cells[i];
+          const userValue = el ? el.value.toUpperCase() : '';
+          if (userValue === PUZZLE.grid[i]) {
+            result += '🟩';
+          } else {
+            result += '🟨';
+          }
+        }
+      }
+      if (r < size - 1) result += '\n';
+    }
+    return result;
+  }
+
+  // ====== CONFIG: paste your Apps Script Web App URL here ======
+  const SCORE_API = 'https://SCRIPT_GOES_HERE/exec'; // TODO: replace with your deployment URL
+
+  // helper to create the same text you copy to clipboard elsewhere
+  function buildShareText({ dnf, timeLeft }){
+    const date = (window.PUZZLE?.date) || PUZZLE.date;
+    const board = emojiBoard(); // reuse your existing function
+    return `WFDD Mini ${date} — ${dnf ? 'DNF' : (timeLeft + 's left')}\n${board}`;
+  }
+
+  function showScoreUI({ dnf, score, timeLeft }) {
+    const scoreBox = document.getElementById('scoreBox');
+    const shareButtons = document.getElementById('shareButtons');
+    const form = document.getElementById('scoreForm');
+    const msg = document.getElementById('scoreMsg');
+    const emailInput = document.getElementById('scoreEmail');
+
+    // only allow submissions for non-DNF
+    scoreBox.style.display = dnf ? 'none' : 'block';
+    shareButtons.style.display = 'block';
+
+    // prefill email if user has one saved
+    const saved = localStorage.getItem('wfdd_email');
+    if (saved) emailInput.value = saved;
+
+    form.onsubmit = async (e)=>{
+      e.preventDefault();
+      msg.textContent = 'Submitting…';
+      const email = emailInput.value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = 'Please enter a valid email.'; return; }
+      localStorage.setItem('wfdd_email', email);
+
+      // build payload
+      const payload = {
+        date: (window.PUZZLE?.date) || PUZZLE.date,
+        email,
+        score,
+        timeLeft,
+        revealsLetter: revealLetterCount,
+        revealsWord: revealWordCount,
+        userAgent: navigator.userAgent
+      };
+
+      try{
+        const r = await fetch(SCORE_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await r.json().catch(()=>({ok:false,error:'Bad JSON'}));
+        if (r.ok && data.ok) {
+          msg.textContent = 'Score submitted! (one best score per day)';
+        } else {
+          msg.textContent = 'Could not submit: ' + (data.error || r.status);
+        }
+      }catch(err){
+        msg.textContent = 'Network error submitting score.';
+      }
+    };
+
+    // Build share URLs using the already-computed emoji card text
+    const date = (window.PUZZLE?.date) || PUZZLE.date;
+    const baseUrl = 'https://wfdd.org/mini';
+    const shareText = buildShareText({ dnf, timeLeft });
+
+    const fb = document.getElementById('shareFacebook');
+    const x  = document.getElementById('shareX');
+    const bs = document.getElementById('shareBluesky');
+
+    fb.href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(baseUrl);
+    x.href  = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText + ' ' + baseUrl);
+    bs.href = 'https://bsky.app/intent/compose?text=' + encodeURIComponent(shareText + ' ' + baseUrl);
+  }
+
+  function finish({ dnf }) {
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+    
+    const score = Math.max(0, timeLeft - 2 * revealLetterCount - 10 * revealWordCount);
+    let endStateText;
+    
+    if (dnf) {
+      endStateText = "DNF — better luck tomorrow.";
+    } else if (revealLetterCount === 0 && revealWordCount === 0) {
+      endStateText = `Perfect. Score: ${score}. Time left: ${timeLeft}s.`;
+    } else {
+      endStateText = `Completed with penalties. Score: ${score}. Time left: ${timeLeft}s.`;
+    }
+
+    const shareText = `WFDD Mini ${PUZZLE.date} — ${dnf ? 'DNF' : (timeLeft + 's left')}\n${emojiBoard()}\nPlay: wfdd.org/mini`;
+    
+    const resultsEl = document.getElementById('results');
+    resultsEl.innerHTML = `
+      <div style="background:#f8f9fa;border:1px solid #ddd;border-radius:8px;padding:12px;margin-top:12px;">
+        <h3 style="margin:0 0 8px;color:#333;">${endStateText}</h3>
+        <textarea id="shareText" readonly style="width:100%;height:80px;font-family:monospace;font-size:0.85rem;resize:none;margin:8px 0;padding:8px;border:1px solid #ccc;border-radius:4px;">${shareText}</textarea>
+        <button id="copyBtn" type="button" style="background:#007bff;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">Copy Share Card</button>
+      </div>
+    `;
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const textarea = document.getElementById('shareText');
+      try {
+        await navigator.clipboard.writeText(shareText);
+        document.getElementById('copyBtn').textContent = 'Copied!';
+        setTimeout(() => {
+          document.getElementById('copyBtn').textContent = 'Copy Share Card';
+        }, 2000);
+      } catch {
+        textarea.select();
+        document.execCommand('copy');
+        document.getElementById('copyBtn').textContent = 'Copied!';
+        setTimeout(() => {
+          document.getElementById('copyBtn').textContent = 'Copy Share Card';
+        }, 2000);
+      }
+    });
+
+    // Show score submission and sharing UI
+    showScoreUI({ dnf, score, timeLeft });
+  }
+
+  function nextInWord(){
+    const word = currentWordCells();
+    const at = word.indexOf(cursor);
+    if (at >= 0 && at < word.length - 1) {
+      setCursor(word[at + 1]);
+    }
+  }
+  function prevInWord(){
+    const word = currentWordCells();
+    const at = word.indexOf(cursor);
+    if (at > 0) {
+      setCursor(word[at - 1]);
+    }
+  }
+
+  function onKeyDown(e){
+    const k = e.key;
+
+    // spacebar toggles direction
+    if (k === ' ' || k === 'Spacebar') {
+      e.preventDefault();
+      dir = dir === 'across' ? 'down' : 'across';
+      highlightWord();
+      renderStatus();
+      return;
+    }
+
+    // letters: place uppercase in current cell, then advance within word
+    if (/^[a-z]$/i.test(k)) {
+      e.preventDefault();
+      startIfNeededOnLetter();
+      const el = cells[cursor];
+      if (el) el.value = k.toUpperCase();
+      nextInWord();
+      // check completion after letter input
+      if (isSolved() && timeLeft > 0) {
+        finish({ dnf: false });
+      }
+      return;
+    }
+
+    // Backspace: erase current if filled, else move back and erase previous
+    if (k === 'Backspace') {
+      e.preventDefault();
+      const el = cells[cursor];
+      if (el && el.value) {
+        el.value = '';
+      } else {
+        prevInWord();
+        const el2 = cells[cursor];
+        if (el2) el2.value = '';
+      }
+      return;
+    }
+
+    // arrows
+    const arrows = {ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down'};
+    if (arrows[k]) { e.preventDefault(); move(arrows[k]); return; }
+
+    // WASD
+    const wasd = {a:'left', d:'right', w:'up', s:'down', A:'left', D:'right', W:'up', S:'down'};
+    if (wasd[k]) { e.preventDefault(); move(wasd[k]); return; }
+  }
+
+  function move(direction){
+    if(direction==='left'){ dir='across'; step(-1); return; }
+    if(direction==='right'){ dir='across'; step(+1); return; }
+    if(direction==='up'){ dir='down'; step(-size); return; }
+    if(direction==='down'){ dir='down'; step(+size); return; }
+  }
+  function step(delta){
+    let i = cursor + delta;
+    while(i>=0 && i<N && isBlock(i)) i += delta;
+    if(i>=0 && i<N && !isBlock(i)) setCursor(i);
+  }
+  function jumpToWord(which, n){
+    dir = which;
+    const arr = (which==='across' ? starts.across[n] : starts.down[n]) || [];
+    if (arr.length) setCursor(arr[0]);
+  }
+
+  // wire up control buttons
+  document.getElementById('revealLetterBtn').addEventListener('click', revealLetter);
+  document.getElementById('revealWordBtn').addEventListener('click', revealWord);
+  document.getElementById('giveUpBtn').addEventListener('click', () => finish({ dnf: true }));
+
+  // start focus and render initial status
+  setCursor(cursor);
+  renderStatus();
+</script>
+</body>
+</html>

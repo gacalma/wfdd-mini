@@ -1,0 +1,86 @@
+name: Build & Deploy WFDD Mini
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 11:05 UTC = 07:05 America/New_York (standard); adjust as needed
+    - cron:  "5 11 * * *"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  TZ: America/New_York
+  NODE_VERSION: 18
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Ensure folders
+        run: |
+          mkdir -p public/puzzles
+          mkdir -p data
+
+      - name: Generate today's puzzle (skip if exists)
+        id: gen
+        run: |
+          TODAY=$(date +'%Y-%m-%d')
+          PUZ="public/puzzles/${TODAY}.json"
+          if [ -f "$PUZ" ]; then
+            echo "already=true" >> $GITHUB_OUTPUT
+            echo "Puzzle exists: $PUZ"
+          else
+            echo "already=false" >> $GITHUB_OUTPUT
+            npm run generate
+            test -f "$PUZ" || (echo "Generator did not create $PUZ" && exit 1)
+          fi
+
+      - name: Prune old puzzles (>120 days)
+        run: |
+          find public/puzzles -type f -name '*.json' | while read f; do
+            base=$(basename "$f" .json)
+            if date -d "$base" >/dev/null 2>&1; then
+              cutoff=$(date -d "120 days ago" +%s)
+              stamp=$(date -d "$base" +%s)
+              [ "$stamp" -lt "$cutoff" ] && rm -f "$f"
+            fi
+          done
+
+      - name: Commit changes
+        if: steps.gen.outputs.already == 'false'
+        run: |
+          git config user.name  "wfdd-mini-bot"
+          git config user.email "wfdd-mini-bot@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: add puzzle $(date +'%Y-%m-%d')"
+          git push
+
+      - name: Upload artifact for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

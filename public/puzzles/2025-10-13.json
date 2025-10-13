@@ -1,0 +1,58 @@
+{
+  "id": "wfdd-mini-2025-10-13",
+  "date": "2025-10-13",
+  "title": "WFDD One-Minute Crossword",
+  "size": 5,
+  "grid": [
+    "R",
+    "I",
+    "V",
+    "E",
+    "R",
+    "A",
+    "#",
+    "A",
+    "I",
+    "R",
+    "R",
+    "A",
+    "D",
+    "I",
+    "O",
+    "N",
+    "P",
+    "R",
+    "#",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A"
+  ],
+  "clues": {
+    "across": {
+      "1": "Flows through the Triad",
+      "7": "Radio waves travel through this",
+      "8": "WFDD medium",
+      "10": "Public radio network",
+      "12": "In today's coverage"
+    },
+    "down": {
+      "1": "In today's coverage",
+      "3": "In today's coverage",
+      "4": "In today's coverage",
+      "5": "In today's coverage",
+      "9": "In today's coverage"
+    }
+  },
+  "meta": {
+    "source_urls": [
+      "https://www.wfdd.org/education/2025-10-13/carolina-curious-what-is-the-status-of-leandro-could-it-help-ws-fcs-amid-budget-crisis",
+      "https://www.wfdd.org/weather/2025-10-11/noreaster-without-a-name-to-bring-ocean-flooding-and-high-winds-to-us-east-coast",
+      "https://www.wfdd.org/politics-government/2025-10-10/forsyth-backs-grant-bid-for-hemp-company-considering-winston-salem-move",
+      "https://www.wfdd.org/books/2025-10-10/dozens-speak-at-randolph-library-meeting-on-childrens-book-about-transgender-boy",
+      "https://www.wfdd.org/national/2025-10-13/tackles-projectiles-and-gunfire-many-fear-ice-tactics-are-growing-more-violent"
+    ]
+  }
+}
