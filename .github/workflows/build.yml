@@ -56,7 +56,27 @@ jobs:
             echo "already=false" >> $GITHUB_OUTPUT
             echo "🎲 Generating new puzzle..."
             echo "Environment: LLM_ENABLED=$LLM_ENABLED"
-            npm run generate
+            echo "Working directory: $(pwd)"
+            echo "Node version: $(node --version)"
+            echo "NPM version: $(npm --version)"
+            
+            # Run generator and capture output
+            echo "Running: npm run generate"
+            if npm run generate; then
+              echo "Generator completed successfully"
+            else
+              echo "❌ Generator command failed with exit code $?"
+              echo "📂 Current directory contents:"
+              ls -la
+              echo "📁 Public directory contents:"
+              ls -la public/ || echo "public directory does not exist"
+              echo "📁 Scripts directory contents:"  
+              ls -la scripts/ || echo "scripts directory does not exist"
+              exit 1
+            fi
+            
+            # Check if puzzle file was created
+            echo "Checking for puzzle file: $PUZ"
             if [ -f "$PUZ" ]; then
               echo "✅ Puzzle generated successfully: $PUZ"
               echo "📄 Puzzle preview:"
@@ -65,6 +85,8 @@ jobs:
               echo "❌ Generator did not create $PUZ"
               echo "📁 Contents of public/puzzles/:"
               ls -la public/puzzles/ || echo "puzzles directory does not exist"
+              echo "📁 All files in public/:"
+              find public/ -type f -name "*.json" || echo "No JSON files in public/"
               exit 1
             fi
           fi

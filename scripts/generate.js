@@ -426,29 +426,35 @@ async function generateClues(grid, stories, usedWords, usedWordSources) {
   async function generateCluesWithLLM(entries, maxLLMCalls) {
     let llmCallCount = 0;
     const results = {};
+    const isLLMEnabled = process.env.LLM_ENABLED === 'true';
     
     // Process in batches of 2 (concurrency limit)
     const batchSize = 2;
     for (let i = 0; i < entries.length; i += batchSize) {
       const batch = entries.slice(i, i + batchSize);
       const promises = batch.map(async (entry) => {
-        if (llmCallCount >= maxLLMCalls) {
+        if (llmCallCount >= maxLLMCalls || !isLLMEnabled) {
           return { ...entry, clue: makeHeuristicClue(entry.answer) };
         }
         
         llmCallCount++;
         console.log(`Generating LLM clue for ${entry.answer} (${llmCallCount}/${maxLLMCalls})`);
         
-        const llmClue = await generateClueLLM({
-          answer: entry.answer,
-          title: entry.sourceTitle,
-          url: entry.sourceUrl
-        });
-        
-        return {
-          ...entry,
-          clue: llmClue || makeHeuristicClue(entry.answer)
-        };
+        try {
+          const llmClue = await generateClueLLM({
+            answer: entry.answer,
+            title: entry.sourceTitle,
+            url: entry.sourceUrl
+          });
+          
+          return {
+            ...entry,
+            clue: llmClue || makeHeuristicClue(entry.answer)
+          };
+        } catch (error) {
+          console.warn(`LLM clue generation failed for ${entry.answer}:`, error.message);
+          return { ...entry, clue: makeHeuristicClue(entry.answer) };
+        }
       });
       
       const batchResults = await Promise.all(promises);

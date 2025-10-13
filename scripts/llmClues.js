@@ -85,7 +85,8 @@ CLUE (max 60 chars):`;
     cache[key] = clue;
     await saveCache(cache);
     return clue;
-  } catch {
+  } catch (error) {
+    console.warn(`LLM API call failed for ${answer}: ${error.message}`);
     return null;
   }
 }
