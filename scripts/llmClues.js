@@ -51,23 +51,29 @@ export async function generateClueLLM({ answer, title, url }) {
     }
   } catch {}
 
-  const sys = `You write engaging crossword clues for WFDD public radio's daily mini puzzle, based on current local and national news.
+  const sys = `You write specific crossword clues for WFDD public radio's daily mini puzzle, based on current local Winston-Salem/Triad news stories.
 
 Rules:
 - Max 60 characters total
-- Reference the news context subtly, not directly
-- Do NOT include the answer word or obvious anagrams  
-- Use active, precise language
-- No quotes or end punctuation
-- Neutral journalistic tone`;
+- Reference SPECIFIC details from the actual news story
+- Mention locations, people, organizations, or events from the story
+- Do NOT use generic phrases like "In today's coverage" or "Sound waves"
+- Do NOT include the answer word or obvious anagrams
+- Be factual and specific to the story content
+- No quotes or end punctuation`;
 
   const user = `ANSWER: ${answer.toUpperCase()}
-NEWS STORY: "${title || 'WFDD coverage'}"
-ARTICLE CONTEXT: ${article || title || 'Local news coverage'}
+NEWS HEADLINE: "${title || 'WFDD story'}"
+STORY DETAILS: ${article || title || 'Local news story'}
 
-Create a crossword clue that connects the answer to this news story without giving it away. Reference the topic or context, not the exact words.
+Write a specific crossword clue that references actual details from this news story - locations, people, events, or organizations mentioned. Avoid generic descriptions.
 
-CLUE (max 60 chars):`;
+Examples:
+- Instead of "Sound waves" → "What WFDD uses to reach Triad listeners"  
+- Instead of "In today's coverage" → "Forsyth County commissioners discussed this"
+- Instead of "Rules governing society" → "What city council updated regarding parking"
+
+SPECIFIC CLUE (max 60 chars):`;
 
   try {
     const ctrl = AbortSignal.timeout(5000);

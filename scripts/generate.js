@@ -222,12 +222,17 @@ function extractCandidateWords(stories, stopwords) {
 
   // Smart sorting for better crossword words
   const sorted = Object.keys(counts).sort((a, b) => {
-    // First priority: crossword-friendly news words
+    // First priority: local WFDD stories over national NPR
+    const aIsLocal = wordSources[a]?.source === 'wfdd';
+    const bIsLocal = wordSources[b]?.source === 'wfdd';
+    if (aIsLocal !== bIsLocal) return bIsLocal - aIsLocal;
+    
+    // Second priority: crossword-friendly news words
     const aIsFriendly = newsKeywords.has(a);
     const bIsFriendly = newsKeywords.has(b);
     if (aIsFriendly !== bIsFriendly) return bIsFriendly - aIsFriendly;
     
-    // Second priority: words from titles
+    // Third priority: words from titles
     const aPriority = wordSources[a]?.priority || 3;
     const bPriority = wordSources[b]?.priority || 3;
     if (aPriority !== bPriority) return aPriority - bPriority;
