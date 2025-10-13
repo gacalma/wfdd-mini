@@ -51,7 +51,8 @@ jobs:
       - name: Generate today's puzzle (skip if exists)
         id: gen
         env:
-          LLM_ENABLED: ${{ secrets.LLM_ENABLED || 'false' }}
+          # Force enable LLM in CI (Option C) — OpenAI API key is read from repository secrets
+          LLM_ENABLED: 'true'
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           LLM_MODEL: gpt-4o-mini
           NODE_ENV: production
