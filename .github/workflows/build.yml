@@ -81,10 +81,10 @@ jobs:
             ls -la scripts/generate.js || echo "❌ generate.js missing"
             ls -la scripts/llmClues.js || echo "❌ llmClues.js missing"
             
-            # Run generator with more verbose output and error capture
-            echo "Running: npm run generate"
+            # Run new builder with more verbose output and error capture
+            echo "Running: npm run build-from-words"
             set -e  # Exit on any error
-            npm run generate 2>&1 | tee generator.log || {
+            npm run build-from-words 2>&1 | tee generator.log || {
               echo "❌ Generator command failed with exit code $?"
               echo "📄 Generator log output:"
               cat generator.log || echo "No log file"
@@ -113,6 +113,23 @@ jobs:
               find public/ -type f -name "*.json" 2>/dev/null || echo "No JSON files in public/"
               exit 1
             fi
+
+      - name: Upload generator log (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generator-log
+          path: generator.log
+
+      - name: Debug: show generator.log and workspace
+        if: always()
+        run: |
+          echo "Workspace files:" && ls -la
+          echo "--- generator.log (if exists) ---"
+          if [ -f generator.log ]; then
+            echo "generator.log exists, first 200 lines:" && sed -n '1,200p' generator.log
+          else
+            echo "generator.log missing"
           fi
 
       - name: Prune old puzzles (>120 days)
