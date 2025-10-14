@@ -201,8 +201,8 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         
-      - name: Output deployment URL
-        run: |
-          echo "🚀 Site deployed to: ${{ steps.deployment.outputs.page_url }}"
-          echo "📅 Puzzle date: $(date +'%Y-%m-%d')"
-          echo "✅ GitHub Pages deployment complete!"
+        - name: Output deployment URL
+          run: |
+            echo "🚀 Site deployed to: ${{ steps.deployment.outputs.page_url }}"
+            echo "📅 Puzzle date: $(date +'%Y-%m-%d')"
+            echo "✅ GitHub Pages deployment complete!"
